@@ -1,0 +1,152 @@
+function [P,window] = EyelinkStart(P,window,Name,inputDialog)
+% EYELINKSTART performs startup routines for the EyeLink 1000 Plus
+% eyetracker. 'P' as input should P.myWidth & P.myHeight (= Screen Resolution),
+% P.BgColor (Background color of the experiment), and P.trackr.dummymode
+% (1=there's no real tracker connected).
+% 'window' refers to the current window pointer
+% 'Name' is the filename to which data are written. Should end with
+% '.edf'. Must be called after first window has been flipped.
+% If inputDialog is 1, you're prompted for a filename, with 'Name' entered
+% as default. Else, Name is simply taken as filename.
+%
+% Creates P.el & P.eye_used
+%
+% Wanja Moessing, June 2016
+Screen(window,'BlendFunction',GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+if isempty(regexp(Name,'.edf', 'once'))
+    if length(Name)>8
+        error('EDF filename is too long.')
+    else
+        Name = strcat(Name,'.edf');
+    end
+elseif length(Name)>12 %8+4 ('.edf')
+    Screen('CloseAll');
+    error('EDF filename is too long.')
+end
+
+if ~exist('inputDialog','var')
+    inputDialog = 0;
+elseif isempty('inputDialog')
+    inputDialog = 0;
+end
+
+% get name for Eyetracker output
+if inputDialog
+    prompt = {'Please enter a filename for the Eyetracker EDF output.'};
+    P.trackr.edfFile  = inputdlg(prompt,'Create EDF file',1,{Name});
+    P.trackr.edfFile  = P.trackr.edfFile{1};
+else
+    P.trackr.edfFile = Name;
+end
+
+%name can only include alpha+digit+underscore------- -
+if length(Name(1:strfind(Name,'.edf')-1))>8 || ~isempty(Name(regexp(Name(1:strfind(Name,'.edf')-1),'\W')))
+    fprintf(2,'Eyelink EDF File does not match the requested format.\n Only [0-9], [A-z] and [_] are allowed.\n');
+    CloseAndCleanup
+end
+
+P.el=EyelinkInitDefaults(window);
+
+% Open connection and throw an error if unsuccessful
+if ~EyelinkInit(P.trackr.dummymode)
+    fprintf('Eyelink Init aborted.\n');
+    cleanup;  % cleanup function
+    return;
+end
+[~,P.trackr.ETversion] = Eyelink('GetTrackerVersion'); %Store EL-Software version
+
+
+% set EDF file contents using the file_sample_data and
+% file-event_filter commands
+% set link data thtough link_sample_data and link_event_filter
+Eyelink('command', 'file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,AREA,BLINK,MESSAGE,BUTTON,INPUT');
+Eyelink('command', 'link_event_filter = LEFT,RIGHT,FIXATION,SACCADE,AREA,BLINK,MESSAGE,BUTTON,INPUT');
+
+% check the software version
+% add "HTARGET" to record possible target data for EyeLink Remote
+if P.trackr.ETversion >=4
+    Eyelink('command', 'file_sample_data  = LEFT,RIGHT,GAZE,HREF,AREA,HTARGET,GAZERES,STATUS,INPUT');
+    Eyelink('command', 'link_sample_data  = LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT');
+else
+    Eyelink('command', 'file_sample_data  = LEFT,RIGHT,GAZE,HREF,AREA,GAZERES,STATUS,INPUT');
+    Eyelink('command', 'link_sample_data  = LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT');
+end
+
+
+% Open File on EyeLink Host
+if ~P.trackr.dummymode
+    i = Eyelink('Openfile', P.trackr.edfFile);
+    if i~=0
+        fprintf('Cannot create EDF file ''%s'' ', P.trackr.edfFile);
+        Eyelink( 'Shutdown');
+        Screen('CloseAll');
+        return;
+    end
+end
+% write preamble to edf file
+Eyelink('command', 'add_file_preamble_text ''Eyetracking Dataset Wanja Moessing 2015 AlphaConcept''');
+% tell tracker the screen resolution
+Eyelink('command','screen_pixel_coords = %ld %ld %ld %ld', 0, 0, P.myWidth-1, P.myHeight-1);
+Eyelink('message', 'DISPLAY_COORDS %ld %ld %ld %ld', 0, 0, P.myWidth-1, P.myHeight-1);
+Eyelink('command', 'calibration_type = HV9'); %9-Pt Grid calibration
+
+
+% make sure we're still connected.
+if Eyelink('IsConnected')~=1 && P.trackr.dummymode == 0
+    fprintf('not connected, clean up\n');
+    Eyelink('Shutdown');
+    Screen('CloseAll');
+    return;
+end
+
+% Calibrate the eye tracker
+% setup the proper calibration foreground and background colors
+if length(P.BgColor)==3
+    P.el.backgroundcolor = P.BgColor;
+elseif length (P.BgColor)==1
+    P.el.backgroundcolour = [P.BgColor P.BgColor P.BgColor];
+end
+P.el.calibrationtargetcolour = [0 0 0];
+
+% parameters are in frequency, volume, and duration
+% set the second value in each line to 0 to turn off the sound
+P.el.cal_target_beep=[600 0.5 0.05];
+P.el.drift_correction_target_beep=[600 0.5 0.05];
+P.el.calibration_failed_beep=[400 0.5 0.25];
+P.el.calibration_success_beep=[800 0.5 0.25];
+P.el.drift_correction_failed_beep=[400 0.5 0.25];
+P.el.drift_correction_success_beep=[800 0.5 0.25];
+% you must call this function to apply the changes from above
+EyelinkUpdateDefaults(P.el);
+
+% Hide the mouse cursor;
+Screen('HideCursorHelper', window);
+EyelinkDoTrackerSetup(P.el);
+
+% The SR-example code continues with restarting recording each
+% trial. I don't really see a reason why we shouldn't have
+% continuous data with event-markers. So I'll just start recording
+% once and send messages.
+
+% put tracker in idle mode and wait 50ms, then really start it.
+Eyelink('Message', 'SETUP_FINISHED');
+Eyelink('Command', 'set_idle_mode');
+Eyelink('Command', 'clear_screen 0'); %clear ET-host screen
+WaitSecs(0.05);
+
+% this can optionally take four boolean input values, specifiying
+% the datatypes recorded (file_samples, file_events, link_samples, link_events)
+%Eyelink('StartRecording',P.trackr.capture(1),P.trackr.capture(2),P.trackr.capture(3),P.trackr.capture(4));
+Eyelink('Command', 'set_idle_mode');
+WaitSecs(0.05);
+Eyelink('StartRecording');
+% record a few samples before we actually start displaying
+% otherwise you may lose a few msec of data
+WaitSecs(0.1);
+
+%set eye_used for gaze controla
+P.eye_used = Eyelink('EyeAvailable'); % get eye that's tracked for gaze-control
+if P.eye_used == P.el.BINOCULAR; % if both eyes are tracked
+    P.eye_used = P.el.LEFT_EYE; % use left eye
+end

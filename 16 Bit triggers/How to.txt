@@ -1,0 +1,6 @@
+
+% add the modified pop_fileio.m to
+~\eeglab13_6_5b\functions\popfunc
+
+% add the modified ft_read_event.m to
+~\eeglab13_6_5b\plugins\fileio-20160624
