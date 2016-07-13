@@ -16,3 +16,4 @@ currently containing:
   consists of two seperate 8-bit streams of input.
   * this is just an adaptation of eeglabs pop_fileio and fieldtrips ft_read_header
   * it's based on the files from eeglab 13_6_5b, so if the authors change stuff in future versions, that might cause trouble.
+* Caplayout files for our 128-electrode Biosemi caps
