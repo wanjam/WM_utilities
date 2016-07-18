@@ -90,7 +90,7 @@ function [event] = ft_read_event(filename, varargin)
 %    along with FieldTrip. If not, see <http://www.gnu.org/licenses/>.
 %
 % $Id$
-
+ 
 global event_queue        % for fcdc_global
 persistent sock           % for fcdc_tcp
 persistent db_blob        % for fcdc_mysql
