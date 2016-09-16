@@ -366,11 +366,11 @@ switch eventformat
     %----------------------------------------------------------------------------
     %custom addon to split the 16bit trigger in low and high-byte channels
     %(WANJA MOESSING 05/07/2016)
-    for i=1:length(trigger)
-        binTrig = dec2bin(trigger(1,i),16);
-        trigger(2,i) = bin2dec(binTrig(1:8));
-        trigger(3,i) = bin2dec(binTrig(9:16));
-    end
+    %WM added vectorized version on 16/09/2016 (~10x faster)
+    binTrig=dec2bin(trigger(1,:),16);
+    trigger(2,:) = bin2dec(binTrig(:,1:8));
+    trigger(3,:) = bin2dec(binTrig(:,9:16));
+
     %----------------------------------------------------------------------------
     
     epoch   = int8(bitget(sdata, 16+1));
