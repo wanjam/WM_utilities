@@ -1,4 +1,4 @@
-function [P,window] = EyelinkStart(P,window,Name,inputDialog)
+function [P,window] = EyelinkStart(P,window,Name,inputDialog,FilePreamble)
 % EYELINKSTART performs startup routines for the EyeLink 1000 Plus
 % eyetracker. 'P' as input should P.myWidth & P.myHeight (= Screen Resolution),
 % P.BgColor (Background color of the experiment), and P.trackr.dummymode
@@ -9,9 +9,16 @@ function [P,window] = EyelinkStart(P,window,Name,inputDialog)
 % If inputDialog is 1, you're prompted for a filename, with 'Name' entered
 % as default. Else, Name is simply taken as filename.
 %
+% Can take the optional argument FilePreamble to specify an
+% experiment-specific preamble in the edf-files. Defaults to:
+% '''Eyetracking Dataset AE Busch WWU Muenster <current working directory>'''
+%
+% NOTE: FilePreamble always needs to start & end with <'''> (3x)
+%
 % Creates P.el & P.eye_used
 %
 % Wanja Moessing, June 2016
+% WM: added FilePreamble on 26/09/2016
 Screen(window,'BlendFunction',GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 if isempty(regexp(Name,'.edf', 'once'))
@@ -29,6 +36,28 @@ if ~exist('inputDialog','var')
     inputDialog = 0;
 elseif isempty('inputDialog')
     inputDialog = 0;
+end
+
+if ~exist('FilePreamble','var')
+    [~, currentFolder, ~] = fileparts(pwd);
+    FilePreamble = ['''Eyetracking Dataset AE Busch WWU Muenster Experiment: ',currentFolder,''''];
+elseif isempty('FilePreamble')
+    [~, currentFolder, ~] = fileparts(pwd);
+    FilePreamble = ['''Eyetracking Dataset AE Busch WWU Muenster Experiment: ',currentFolder,''''];
+end
+
+%make sure filepreamble is in the right format
+quoteloc = regexp(FilePreamble,'''');
+ErrText = ['The specified EDF Filename does not match the desired format. '...
+        'Make sure that it`s one string with single quotation marks at'...
+        ' beginning and end. To include single quotation marks in a string'...
+        ' add two additional single quotation marks (so 3 in total).'];
+if ~isempty(quoteloc)
+    if  ~quoteloc(1)==1 || ~quoteloc(2)==length(FilePreamble)
+        error(ErrText)
+    end
+else
+    error(ErrText)
 end
 
 % get name for Eyetracker output
@@ -85,7 +114,9 @@ if ~P.trackr.dummymode
     end
 end
 % write preamble to edf file
-Eyelink('command', 'add_file_preamble_text ''Eyetracking Dataset Wanja Moessing 2015 AlphaConcept''');
+
+preamble = ['add_file_preamble_text ',FilePreamble];
+Eyelink('command', preamble);
 % tell tracker the screen resolution
 Eyelink('command','screen_pixel_coords = %ld %ld %ld %ld', 0, 0, P.myWidth-1, P.myHeight-1);
 Eyelink('message', 'DISPLAY_COORDS %ld %ld %ld %ld', 0, 0, P.myWidth-1, P.myHeight-1);
