@@ -181,3 +181,6 @@ P.eye_used = Eyelink('EyeAvailable'); % get eye that's tracked for gaze-control
 if P.eye_used == P.el.BINOCULAR; % if both eyes are tracked
     P.eye_used = P.el.LEFT_EYE; % use left eye
 end
+
+%Null the Eyelink Host-PC's parallel port
+Eyelink('Command', 'write_ioport 0x8 255')
