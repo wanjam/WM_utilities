@@ -102,7 +102,6 @@ else
     Eyelink('command', 'link_sample_data  = LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT');
 end
 
-
 % Open File on EyeLink Host
 if ~P.trackr.dummymode
     i = Eyelink('Openfile', P.trackr.edfFile);
@@ -182,5 +181,29 @@ if P.eye_used == P.el.BINOCULAR; % if both eyes are tracked
     P.eye_used = P.el.LEFT_EYE; % use left eye
 end
 
-%Null the Eyelink Host-PC's parallel port
-Eyelink('Command', 'write_ioport 0x8 255')
+% to activate parallel port readout without modifying the FINAL.INI on the
+% eyelink host pc, uncomment these lines
+%%tyical settings for straight-through TTL cable (data pins -> data pins)
+Eyelink('Command','write_ioport 0xA 0x20');
+Eyelink('Command','create_button 1 8 0x01 0');
+Eyelink('Command','create_button 2 8 0x02 0'); 
+Eyelink('Command','create_button 3 8 0x04 0');   
+Eyelink('Command','create_button 4 8 0x08 0'); 
+Eyelink('Command','create_button 5 8 0x10 0'); 
+Eyelink('Command','create_button 6 8 0x20 0'); 
+Eyelink('Command','create_button 7 8 0x40 0'); 
+Eyelink('Command','create_button 8 8 0x80 0'); 
+Eyelink('Command','input_data_ports  = 8');
+Eyelink('Command','input_data_masks = 0xFF');
+
+%%tyical settings for crossover TTL cable (data pins -> status pins)
+%Eyelink('Command','write_ioport 0xA 0x0');
+%Eyelink('Command','create_button 1 9 0x20 1'); 
+%Eyelink('Command','create_button 2 9 0x40 1'); 
+%Eyelink('Command','create_button 3 9 0x08 1');   
+%Eyelink('Command','create_button 4 9 0x10 1');
+%Eyelink('Command','create_button 5 9 0x80 0'); 
+%Eyelink('Command','input_data_ports  = 9');
+%Eyelink('Command','input_data_masks = 0xFF');
+ 
+Eyelink('Message', '>EndOfEyeLinkStart');
