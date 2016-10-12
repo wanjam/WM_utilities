@@ -14,7 +14,7 @@ Eyelink('CloseFile');
 % download data file
 try
     fprintf('Receiving Eyetracker data file ''%s''\n', P.trackr.edfFile );
-    mkdir('./Data','EyeData')
+    [~,~,~] = mkdir('./Data','EyeData');
     status=Eyelink('ReceiveFile',P.trackr.edfFile,'./Data/EyeData/',1);
     if status > 0
         fprintf('ReceiveFile status %d\n', status);
