@@ -1,5 +1,5 @@
-function [] = AvoidWrongTriggers
-% AVOIDWRONGTRIGGERS throws an error if Eyelink is connected but not
+function [] = EyelinkAvoidWrongTriggers
+% EYELINKAVOIDWRONGTRIGGERS throws an error if Eyelink is connected but not
 % configured.
 %
 % Since we use a Y-cable, that is supposed to send the TTL-triggers from
@@ -10,7 +10,7 @@ function [] = AvoidWrongTriggers
 % trigger at startup if not configured properly. So if an experiment that
 % doesn't use the Eyetracker sends a trigger to the EEG while the
 % Eyetracker host-pc is turned on, that causes a wrong trigger in the EEG
-% signal. AVOIDWRONGTRIGGERS can be placed at the beginning of an
+% signal. EYELINKAVOIDWRONGTRIGGERS can be placed at the beginning of an
 % experiment that doesn't use the eyelink to throw an error if the eyelink
 % is still connected.
 %
