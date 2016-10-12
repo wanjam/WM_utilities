@@ -15,7 +15,11 @@ function [] = EyelinkAvoidWrongTriggers
 % is still connected.
 %
 % Wanja Moessing Oct 12, 2016
-if Eyelink('IsConnected')
+
+fprintf(2,'Pinging Eyelink to check if connected...\n');
+[notConnected, Info] = dos(['ping 100.1.1.1 -n 1']);
+
+if Eyelink('IsConnected') || ~notConnected
     error(['Eyelink host PC is turned on. Without running the appropriate startup routines '...
         '(e.g., `EyelinkStart.m` from Wanja`s Github repo), this will cause faulty triggervalues'...
         ' in your EEG signal, because the parallel-port of the Eyelink-PC is set to a random'...
