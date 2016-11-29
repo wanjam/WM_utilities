@@ -37,7 +37,7 @@ if IsLinux
     global TTLPORTOPEN
     TTLPORTOPEN = 1;
     catch ME
-        fprintf(2,'opening the parallel port failed. This could be related to access rights to the parallel port.\nCheck this thread for more info:\nhttps://beta.groups.yahoo.com/neo/groups/PSYCHTOOLBOX/conversations/messages/21077\n\n');
+        fprintf(2,'opening the parallel port failed. Did you run Install_EEG_trigger.m and read the readme.m?\n');
         rethrow(ME);
     end
 end
