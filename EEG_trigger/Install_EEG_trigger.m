@@ -17,7 +17,7 @@ curPath = which('Install_EEG_trigger.m');
 curPath = [curPath(1:regexp(curPath,'Install_EEG_trigger.m')-1),filesep];
 
 % download files and add to startup.m
-if IsWin
+if ispc
     websave([curPath,'io64.mexw64'],'http://apps.usd.edu/coglab/psyc770/misc/x64/io64.mexw64');
     websave([curpath,'inpoutx64.dll'],'http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
     try %...installing it directly
@@ -29,7 +29,7 @@ if IsWin
     fprintf(2, '\nReboot your computer for the changes to take effect.\n');
 end
 
-if IsLinux
+if isunix
     websave([curPath,'ppdev_mex.mexa64'],'https://github.com/widmann/ppdev-mex/raw/master/ppdev_mex.mexa64');
     websave([curPath,'ppdev_mex.m'],'https://raw.githubusercontent.com/widmann/ppdev-mex/master/ppdev_mex.m');
     fprintf(2, 'You need to make a few manual changes to Ubuntu. Check the readme.md of this folder.')
