@@ -23,6 +23,10 @@ try
         fprintf('Data file ''%s'' can be found in ''%s''\n', P.trackr.edfFile, pwd );
     end
 catch
-    fprintf('Problem receiving data file ''%s''\n try finding it on the Eyelink Host-PC!\n', P.trackr.edfFile );
+    try
+        fprintf('Problem receiving data file ''%s''\ntry finding it on the Eyelink Host-PC!\n', P.trackr.edfFile );
+    catch
+        fprintf('Problem receiving data file.\nTry finding it on the Eyelink Host-PC!\n');
+    end
 end
 Eyelink('ShutDown');

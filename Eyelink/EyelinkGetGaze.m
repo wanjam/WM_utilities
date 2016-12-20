@@ -1,4 +1,4 @@
-function [mx,my,hsmvd] = EyelinkGetGaze(P,IgnoreBlinks)
+function [mx,my,hsmvd] = EyelinkGetGaze(P,IgnoreBlinks, OverSamplingBehavior)
 % [mx,my,hsmvd,resp] = EYELINKGETGAZE(P)
 % outputs the current gaze position captured by the eyelink 1000+
 % Note that this function outputs Centercoordinates and hsmvd if no new
@@ -14,6 +14,9 @@ function [mx,my,hsmvd] = EyelinkGetGaze(P,IgnoreBlinks)
 %                           is replaced by the center coordinates of the
 %                           screen. If 0, blinks cause mx & my to be Inf
 %                           and hsmvd to 1.
+%   OverSamplingBehavior  = Optional. Integer. Defines the value of hsmvd
+%                           in case PTB samples faster than Eyelink.
+%                           Default is '0'.
 %   P.CenterX & P.CenterY = obvious...
 %   P.el                  = Should have been created with EyelinkStart.m
 %   P.FixLenDeg           = Integer, how many degree is gaze allowed to
@@ -64,5 +67,11 @@ else %if no new sample is available
     %fprintf('No data from Eyelink available!\n')
     mx=P.CenterX;
     my=P.CenterY;
-    hsmvd =0;
+    if exist('OverSamplingBehavior','var')
+        hsmvd = OverSamplingBehavior;
+    else
+        hsmvd = 0;
+    end
+    
+    
 end
