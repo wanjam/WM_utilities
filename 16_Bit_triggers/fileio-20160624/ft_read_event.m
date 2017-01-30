@@ -389,16 +389,18 @@ switch eventformat
     flank_cmrange = diff([0 cmrange]);
     flank_battery = diff([0 battery]);
     
+    % note that the labels do not match the variable-names because what is
+    % low and waht is high differs between fieldtrip and biosemi.
     for i=find(flank_triggerhigh>0)
       event(end+1).type   = 'STATUS';
-      event(end  ).device = 'highbyte-VPixx';
+      event(end  ).device = 'lowbyte-PC';
       event(end  ).sample = i + begsample - 1;
       event(end  ).value  = double(trigger(3,i));
     end
     
     for i=find(flank_triggerlow>0)
       event(end+1).type   = 'STATUS';
-      event(end  ).device = 'lowbyte-PC';
+      event(end  ).device = 'highbyte-VPixx';
       event(end  ).sample = i + begsample - 1;
       event(end  ).value  = double(trigger(2,i));
     end
