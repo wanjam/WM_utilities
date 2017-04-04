@@ -7,6 +7,7 @@ function [curloc,hsmvd,btprsd,x,y] = InpMoved(P,lastloc,wPtr,Wheel)
 %   can be specified in P.AllowedMouseMove.
 %   P (optional as well) with field P.isPad informs the function about the
 %   connected sort of input device (default is 0=Mouse).
+%   Alternatively, P.isPad can be either of "Mouse","PowerMate","GamePad".
 %   If P.isPad == 1, the function also requires P.PadHandle, to know which
 %   gamepad to check, as well as P.myHeight and P.myWidth (Resolution of
 %   the Screen).
@@ -35,13 +36,22 @@ if nargin<3
     wPtr=[];
 end
 
-%if P.isPad doesn't exist poll standard mouse
+%if P.isPad doesn't exist poll standard mouse.
 if ~isfield(P,'isPad')
     P.isPad = 0;
+elseif ischar(P.isPad)
+    switch P.isPad
+        case 'Mouse'
+            P.isPad = 0;
+        case 'GamePad'
+            P.isPad = 1;
+        case 'PowerMate'
+            P.isPad = 2;
+    end
 end
 
 %if no maximally allowed move is defined, take 10 pixels
-if ~isfield(P,'P.AllowedMouseMove')
+if ~isfield(P,'AllowedMouseMove')
     P.AllowedMouseMove = 10;
 end
 
@@ -50,10 +60,10 @@ end
 %the initial value.
 if P.isPad==2 && exist('lastloc','var')
     if ~isfield(lastloc,'matePos')
-        lastloc.matePos = 0;
+        lastloc.matePos = PsychPowerMate('Get', P.mateHandle);
     end
 elseif P.isPad==2 && ~exist('lastloc','var')
-    lastloc.matePos=0;
+    lastloc.matePos     = PsychPowerMate('Get', P.mateHandle);
 end
 
 %control where output begins if no lastloc is given and mate is used
@@ -73,15 +83,19 @@ end
 %that represent the lastloc
 if P.isPad==2
     if exist('lastloc','var')
-        mateIdx = Wheel(1,:)==lastloc.x & Wheel(2,:)==lastloc.y;
+        if isfield(lastloc,'x') %if a previous location is given, find the index of the coordinates on Wheel
+            mateIdx = find(Wheel(1,:)==lastloc.x & Wheel(2,:)==lastloc.y);
+        else %If no previous input was given, simply set mateIdx to 0
+            mateIdx = [];
+        end
     else
-        mateIdx = 0;
+        mateIdx = [];
     end
-    if ~any(mateIdx)
-        if strcmp(P.randoMate,'random')
+    if isempty(mateIdx) %if mateIdx is empty (because of no previous input) randomly select an index
+        if strcmp(P.RandoMate,'random')
             mateIdx = find(randi(length(Wheel),1));
         else
-            mateIdx = P.randoMate*P.RespWheelPrec; %set to to degree
+            mateIdx = P.RandoMate*P.RespWheelPrec; %set to to degree
         end
     end
 end
@@ -92,21 +106,30 @@ switch P.isPad
     case 0
         [curloc.x,curloc.y,mbut]   =   GetMouse(wPtr);
     case 1
-        [curloc.x,curloc.y]   =   convertPadAxes(axis(P.PadHandle),P);
+        [curloc.x,curloc.y]        =   convertPadAxes(axis(P.PadHandle),P);
     case 2
-        [matebutton, curloc.matePos]     =   PsychPowerMate('Get', P.mateHandle);
+        [matebutton, curloc.matePos] = PsychPowerMate('Get', P.mateHandle);
         %use the Wheel from above to determine the x & y coordinates that
         %correspond to the move. P.randomMate can be used to control
         %whether to choose a random or a specific value as starting point.
-        if curloc.matePos ~= lastloc.matePos
-            if curloc.matePos<lastloc.matePos
-                mateIdx = mateIdx-(lastloc.matePos-curloc.matePos);
-            else
-                mateIdx = mateIdx+(lastloc.matePos-curloc.matePos);
+        backmateIdx=mateIdx;
+        if curloc.matePos ~= lastloc.matePos %if mate changed
+            if curloc.matePos<lastloc.matePos %...and turned counterclockwise
+                mateIdx = mateIdx+abs(lastloc.matePos-curloc.matePos); %take mateIdx, which is either a random wheel index or the one from the run before, and go as many indeces counterclockwise as is the difference between last and this run in mateposition
+            else %if it turned clockwise, add the indeces
+                mateIdx = mateIdx-abs(lastloc.matePos-curloc.matePos);
             end
-            if mateIdx<0
-                tmp = Wheel(:,end-mateIdx);
+            %if mateIdx<=0 %if Idx is negative, start again at the end of Wheel coordinates.
+                %This is similar to 1°-5° being 356°
+                %because we count 1°-360°, index 0 == index end
+                %in the case that we just start sampling but the state is
+                %still veeery negative:
+                
+            %    tmp = Wheel(:,end+mateIdx);
+            if  mod(mateIdx,length(Wheel))==0
+                tmp = Wheel(:,end);
             else
+                %if index is positive, check that it's not a multiple of the wheel.
                 tmp = Wheel(:,mod(mateIdx,length(Wheel)));
             end
             curloc.x = tmp(1,:);
@@ -132,7 +155,7 @@ switch P.isPad
 end
 
 
-if ~exist('lastloc','var') || isempty(lastloc)
+if ~exist('lastloc','var') || isempty(lastloc) || ~isfield(lastloc,'x')
     hsmvd = 0;
 elseif hypot((curloc.x-lastloc.x),(curloc.y-lastloc.y))>P.AllowedMouseMove
     hsmvd = 1;
