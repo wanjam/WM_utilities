@@ -1,0 +1,33 @@
+# wanjasmatlabscheme - MATLAB color scheme
+# Generated with schemer_export v1.4.0, on MATLAB 9.2.0.538062 (R2017a)
+# Wed May 03 10:04:41 CEST 2017
+# To enable this color scheme in MATLAB use schemer_import, available at:
+#     https://github.com/scottclowe/matlab-schemer
+#     https://www.mathworks.com/matlabcentral/fileexchange/53862-matlab-schemer
+ColorsUseSystem=Bfalse
+ColorsUseMLintAutoFixBackground=Btrue
+Editor.VariableHighlighting.Automatic=Btrue
+Editor.NonlocalVariableHighlighting=Btrue
+EditorCodepadHighVisible=Btrue
+EditorCodeBlockDividers=Btrue
+Editorhighlight-caret-row-boolean=Btrue
+EditorRightTextLineVisible=Btrue
+EditorRightTextLimitLineWidth=I1
+ColorsText=C-986896
+ColorsBackground=C-12632257
+Colors_M_Keywords=C-2196224
+Colors_M_Comments=C-1199840
+Colors_M_Strings=C-8934352
+Colors_M_UnterminatedStrings=C-5111808
+Colors_M_SystemCommands=C-8355712
+Colors_M_Errors=C-65536
+Colors_HTML_HTMLLinks=C-16728129
+Colors_M_Warnings=C-27648
+ColorsMLintAutoFixBackground=C-8355712
+Editor.VariableHighlighting.Color=C-8355712
+Editor.NonlocalVariableHighlighting.TextColor=C-16735325
+Editorhighlight-lines=C-11513776
+Editorhighlight-caret-row-boolean-color=C-8355712
+EditorRightTextLimitLineColor=C-3355444
+Color_CmdWinWarnings=C-2534631
+Color_CmdWinErrors=C-256
