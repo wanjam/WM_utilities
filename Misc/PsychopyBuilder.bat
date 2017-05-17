@@ -1,0 +1,1 @@
+python C:\ProgramData\Anaconda2\Scripts\psychopyApp.py

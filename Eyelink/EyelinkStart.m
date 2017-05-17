@@ -80,6 +80,7 @@ P.el=EyelinkInitDefaults(window);
 % Open connection and throw an error if unsuccessful
 if ~EyelinkInit(P.trackr.dummymode)
     fprintf('Eyelink Init aborted.\n');
+    fprintf('Try to restart the Eyelink host PC.\n');
     cleanup;  % cleanup function
     return;
 end

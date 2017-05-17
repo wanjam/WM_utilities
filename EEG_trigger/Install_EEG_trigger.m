@@ -19,12 +19,16 @@ curPath = [curPath(1:regexp(curPath,'Install_EEG_trigger.m')-1),filesep];
 % download files and add to startup.m
 if ispc
     websave([curPath,'io64.mexw64'],'http://apps.usd.edu/coglab/psyc770/misc/x64/io64.mexw64');
-    websave([curpath,'inpoutx64.dll'],'http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
+    websave([curPath,'inpoutx64.dll'],'http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
     try %...installing it directly
         websave('C:\Windows\System32\inpoutx64.dll','http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
-        websave('C:\Windows\SysWOW\inpoutx64.dll','http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
+        try %changes between x64 versions of win10
+            websave('C:\Windows\SysWOW\inpoutx64.dll','http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
+        catch
+            websave('C:\Windows\SysWOW64\inpoutx64.dll','http://apps.usd.edu/coglab/psyc770/misc/x64/inpoutx64.dll');
+        end
     catch
-        warning('Couldn''t install driver to system. You can find a file ''inpoutx64.dll'' in %s\n Copy this file to ''C:\Windows\System32'' \& ''C:\Windows\SysWOW''\n Alternatively, try running Matlab as admin and run this script again.');
+        warning('Couldn''t install driver to system. You can find a file ''inpoutx64.dll'' in %s\n Copy this file to ''C:\Windows\System32'' \& ''C:\Windows\SysWOW64''\n Alternatively, try running Matlab as admin and run this script again.');
     end
     fprintf(2, '\nReboot your computer for the changes to take effect.\n');
 end
