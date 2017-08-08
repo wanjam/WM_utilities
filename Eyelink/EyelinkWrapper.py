@@ -46,9 +46,20 @@ def AvoidWrongTriggers():
         print(msg)
         raise SystemExit
 
+def EyelinkCalibrate(el, dispsize, colors=((0,0,0),(192,192,192))):
+    pylink.setCalibrationColors(colors[0], colors[1]) 	#Sets the calibration target and background color
+    pylink.setTargetSize(int(dispsize[0]/70), int(dispsize[0]/300))	#select best size for calibration target
+    pylink.setCalibrationSounds("", "", "")
+    pylink.setDriftCorrectSounds("", "off", "off")
+    pylink.openGraphics()
+    el.doTrackerSetup()
+    pylink.closeGraphics()
 
-def EyelinkStart(P, window, Name, inputDialog, FilePreamble):
+def EyelinkStart(dispsize, Name, bits=32, dummy=False, colors=((0,0,0),(192,192,192))):
     """ Start connection to EL1000+
+    dispsize: two-item tuple width & height
+    bits    : color-depth, defaults to 32
+    
     Performs startup routines for the EyeLink 1000 Plus
     eyetracker. 'P' as input should P.myWidth & P.myHeight (= Scrn Resolution),
     P.BgColor (Background color of the experiment), and P.trackr.dummymode
@@ -68,38 +79,85 @@ def EyelinkStart(P, window, Name, inputDialog, FilePreamble):
     from os import path, getcwd
 
     # get filename
-    if '.edf' not in Name:
+    if '.edf' not in Name.lower():
         if len(Name) > 8:
             print('EDF filename too long! (1-8 characters/letters)')
             raise SystemExit
         else:
             Name += '.edf'
-    elif '.edf' in Name:
+    elif '.edf' in Name.lower():
         if len(Name) > 12:
             print('EDF filename too long! (1-8 characters/letters)')
             raise SystemExit
 
-    # specify file preamble
-    currentdir = path.basename(getcwd())
-    FilePreamble = "''Eyetracking Dataset AE Busch WWU Muenster Experiment: "
-    FilePreamble += currentdir + "''"
-
     # initialize tracker object
-    eyelinktracker = pylink.EyeLink()
+    if dummy:
+        el = pylink.EyeLink(None)
+    else:
+        el = pylink.EyeLink("100.1.1.1")
 
-    # initialize graphics. This assumes display initialization.
-    pylink.openGraphics()
-
+    # initiate graphics
+    pylink.openGraphics(dispsize, bits)
+    
     # Open EDF file on host
-    getEyelink().openDataFile(Name)
-
-    # flush all key presses and set tracker mode to offline.
+    el.openDataFile(Name)
+    
+    #flush old keys
     pylink.flushGetkeyQueue()
-    getEYELINK().setOfflineMode()
 
     # Sets the display coordinate system and sends mesage to that
     # effect to EDF file;
-    getEYELINK().sendCommand("screen_pixel_coords =  0 0 %d %d" %
-                             (P.myWidth - 1, P.myHeight - 1))
-    getEYELINK().sendMessage("DISPLAY_COORDS  0 0 %d %d" %
-                             (P.myWidth - 1, P.myHeight - 1))
+    el.sendCommand("screen_pixel_coords =  0 0 %d %d" %
+                             (dispsize[0] - 1, dispsize[1] - 1))
+    el.sendMessage("DISPLAY_COORDS  0 0 %d %d" %
+                             (dispsize[0] - 1, dispsize[1] - 1))
+
+
+
+    # select parser configuration for online saccade etc detection
+    ELversion = el.getTrackerVersion()
+    ELsoftVer = 0
+    if ELversion == 3:
+        tmp = el.getTrackerVersionString()
+        tmpidx = tmp.find('EYELINK CL')
+        ELsoftVer = int(float(tmp[(tmpidx + len("EYELINK CL")):].strip()))
+    if ELversion>=2:
+        el.sendCommand("select_parser_configuration 0")
+    if ELversion==2:
+        # turn off scenelink stuff (that's an EL2 front-cam addon...)
+        el.sendCommand("scene_camera_gazemap = NO")
+    else:
+        el.sendCommand("saccade_velocity_threshold = 35")
+        el.sendCommand("saccade_acceleration_threshold = 9500")
+	    
+	
+    # set EDF file contents 
+    el.sendCommand("file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,AREA,BLINK,MESSAGE,BUTTON,INPUT")
+    if ELsoftVer>=4:
+	    el.sendCommand("file_sample_data  = LEFT,RIGHT,GAZE,HREF,AREA,HTARGET,GAZERES,STATUS,INPUT")
+    else:
+        el.sendCommand("file_sample_data  = LEFT,RIGHT,GAZE,HREF,AREA,GAZERES,STATUS,INPUT")
+
+    # set link data (online interaction) 
+    el.sendCommand("link_event_filter = LEFT,RIGHT,FIXATION,SACCADE,AREA,BLINK,MESSAGE,BUTTON,INPUT")
+    if ELsoftVer>=4:
+	    el.sendCommand("link_sample_data  = LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT")
+    else:
+        el.sendCommand("link_sample_data  = LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT")
+        
+    #set file preamble
+    currentdir = path.basename(getcwd())
+    FilePreamble = "''Eyetracking Dataset AE Busch WWU Muenster Experiment: "
+    FilePreamble += currentdir + "''"
+    el.sendcommand("add_file_preamble_text " + FilePreamble)
+    
+    EyelinkCalibrate(el, dispsize, colors)
+    
+    #put tracker in idle mode and wait 50ms, then really start it.
+    el.sendMessage('SETUP_FINISHED')
+    el.sendCommand('set_idle_mode')
+    el.sendCommand('clear_screen 0')
+    pylink.msecDelay(500)
+    
+    #start recording
+    el.startRecording()
