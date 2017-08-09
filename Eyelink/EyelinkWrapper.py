@@ -1,32 +1,42 @@
 # -*- coding: utf-8 -*-
 """
-WM_EyelinkWrapper.py
 A custom module to make interaction with the eyelink 1000+ more
-straightforward.
+straightforward. Depends on the **pylink** module that ships with SR-Research's
+'Developer Pack'. After installation, you will have folder containing this
+module somewhere on your computer. Make sure to copy it to the
+``site-packages`` folder of your python distribution.
+Official Python repositories include another module called *pylink*, which is
+absolutely unrelated. So ``pip`` or ``conda install`` won't work!
 
-First Version July 2017
-__author__ = "Wanja A. Mössing"
-__copyright__ = "Copyright 2017, Institute for Experimental Psychology,
-    WWU Münster, Germany"
-__email__ = "moessing@wwu.de"
+**Author** :
+    Wanja Mössing, WWU Münster | moessing@wwu.de
+**Version**:
+    July 2017
+**copyright** :
+    Copyright 2017, Institute for Experimental Psychology, WWU Münster, Germany
 """
 
 # import dependencies to global
 import pylink
-from os import path, getcwd, stat, mkdir
+from os import path, getcwd, mkdir
 
 
 def AvoidWrongTriggers():
-    """ Throws an error if Eyelink is connected but not configured.
-    Since we use a Y-cable, that is supposed to send the TTL-triggers from
-    the PTB-PC to the EEG and he Eyetracker host, there is a permanent
-    connection between the three parallelports (1. EEG, 2.PTB, 3.Eyelink).
+    """ Throws an error if Eyelink is connected but not configured.\n
+    *Only needed in EEG experiments without Eyetracking!*
+
+    **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
+    *July 2017*
+
+    Since we use a Y-cable which is supposed to send the TTL-triggers from
+    the Python-PC to EEG & Eyetracker host, there is a permanent
+    connection between the three parallelports (1. EEG, 2.Python, 3.Eyelink).
     Therefore, all parallelports need to be set low, except for the one
-    putting the triggers (i.e. PTB). The Eyelink host-pc sends a random
+    putting the triggers (i.e. Python). The Eyelink host-pc sends a random
     trigger at startup if not configured properly. So if an experiment that
     doesn't use the Eyetracker sends a trigger to the EEG while the
     Eyetracker host-pc is turned on, that causes a wrong trigger in the EEG
-    signal. EYELINKAVOIDWRONGTRIGGERS can be placed at the beginning of an
+    signal. This function can be placed at the beginning of an
     experiment that doesn't use the eyelink to throw an error if the eyelink
     is still connected.
     """
@@ -51,7 +61,7 @@ def AvoidWrongTriggers():
 
 
 def EyelinkCalibrate(dispsize, el=pylink.getEYELINK(),
-                     colors=((0, 0, 0), (192, 192, 192))):
+                     colors=((0, 0, 0), (192, 192, 192)), bits=32):
     """ Performs calibration for Eyelink 1000+.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
@@ -65,7 +75,11 @@ def EyelinkCalibrate(dispsize, el=pylink.getEYELINK(),
         Eyelink object, optional
     colors  : Tuple, Optional.
         Tuple with two RGB triplets
+    bits    : integer
+        color-depth, defaults to 32
     """
+    # open eyelink host graphics
+    pylink.openGraphics(dispsize, bits)
     # Sets the calibration target and background color
     pylink.setCalibrationColors(colors[0], colors[1])
     # Select best size for calibration target
@@ -227,7 +241,7 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
     return(el)
 
 
-def EyelinkStop(el=pylink.getEYELINK()):
+def EyelinkStop(Name, el=pylink.getEYELINK()):
     """ Performs stopping routines for the EyeLink 1000 Plus eyetracker.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
@@ -235,41 +249,79 @@ def EyelinkStop(el=pylink.getEYELINK()):
 
     Parameters:
     -----------
-    dispsize : tuple
-        two-item tuple width & height in px
     Name    : string
-        filename for the edf. Doesn't have to, but can, end on '.edf'
-        Maximum length is 8 (without '.edf').
-        Possible alphanumeric input: 'a-z', 'A-Z', '0-9', '-' & '_'
-    bits    : integer
-        color-depth, defaults to 32
-    dummy   : boolean
-        Run tracker in dummy mode?
-    colors  : Tuple, Optional.
-        Tuple with two RGB triplets
-
-    Returns
-    -------
-    'el' the tracker object.
-             This can be passed to other functions,
-             although they can use pylink.getEYELINK()
-             to find it automatically.
+        filename of the edf. Doesn't have to, but can, end on '.edf'
+        Must be the same name used during EyelinkStart()
+    el : Eyelink Object
+        Eyelink object returned by EyelinkStart().
+        By default this function tried to find it itself.
     """
+    # Check filename
+    if '.edf' not in Name.lower():
+            Name += '.edf'
     # make sure all experimental procedures finished
     pylink.msecDelay(1000)
     # stop the recording
     el.stopRecording()
     # put Eyelink back to idle
-    el.sendCommand('set_idle_mode')
-    #
+    el.setOfflineMode()
     # wait for stuff to finish
     pylink.msecDelay(500)
     # close edf
-    el.closeDataFile
+    el.closeDataFile()
     # transfer edf to display-computer
     try:
-        disp('Wait for EDF to be copied over LAN...')
-        if not os.path.exists('./EDF'):
-            os.mkdir('./EDF')
-        
-        
+        print('Wait for EDF to be copied over LAN...')
+        if not path.exists('./EDF'):
+            mkdir('./EDF')
+        el.receiveDataFile(Name, './EDF/'+Name)
+        print('Done. EDF has been copied to ./EDF folder.')
+    except RuntimeError:
+        print('Error while pulling EDF file. Try to find it on Eyelink host..')
+    el.close()
+    pylink.closeGraphics()
+
+
+def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(),
+                   IgnoreBlinks=False, OversamplingBehavior=0):
+    """ Online gaze position output and gaze control for Eyelink 1000+.
+
+    **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
+    *July 2017*
+
+    Parameters
+    ----------
+    dispsize : tuple
+        two-item tuple width & height in px
+    el: Eyelink object
+        ...as returned by, e.g., EyelinkStart()
+    FixLenDeg : 
+    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
