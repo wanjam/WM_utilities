@@ -295,12 +295,33 @@ def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(),
         two-item tuple width & height in px
     el: Eyelink object
         ...as returned by, e.g., EyelinkStart()
-    FixLenDeg : 
+    FixLenDeg : integer
+        A circle around 
     """
+    
 
+def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
+    """ Sends tab-delimited Message eo EDF
 
+    **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
+    *July 2017*
 
-
+    Parameters
+    ----------
+    infolist : list
+        a list with information. The first item in the list is used as
+        event-definition (e.g., ['trialOnset', 1, 'Condition X', 0.78])
+        Can take strings, integers, floats
+    el: Eyelink object
+        ...as returned by, e.g., EyelinkStart()
+    """
+    # prepend identifier if necessary
+    if infolist[0] is not '>':
+        infolist.insert(0, '>')
+    # make it a tab delimited list and convert everything to string
+    msg = '\t'.join(str(i) for i in infolist)
+    # send to Eyetracker
+    el.sendMessage(msg)
 
 
 
