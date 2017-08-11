@@ -282,8 +282,8 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
     pylink.closeGraphics()
 
 
-def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(),
-                   IgnoreBlinks=False, OversamplingBehavior=0):
+def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET = True, FixLen,
+                   PixPerDeg=[],IgnoreBlinks=False, OversamplingBehavior=0):
     """ Online gaze position output and gaze control for Eyelink 1000+.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
@@ -294,8 +294,32 @@ def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(),
     dispsize : tuple
         two-item tuple width & height in px
     el: Eyelink object
-        ...as returned by, e.g., EyelinkStart()
-    FixLenDeg : 
+        ...as returned by, e.g., ``EyelinkStart()``. You can try to run it
+        without passing ``el``. In that case ``EyelinkGetGaze()`` will try to
+        find ``el``.
+    isET: boolean, default=True
+        Is Eyetracker connected? If ``False``, returns display center as
+        coordinates and ``hsmvd=False``.
+    FixLen : int
+        A circle around a specified point is set as area that subjects are
+        allowed to look at. ``FixLen`` defines the radius of that circle.
+        Can be in degree or pixels. If ``PixPerDeg`` is not empty, assumes
+        degree, else pixels.
+    PixPerDeg: float
+        How many pixels per one degree of visual angle? If provided, ``FixLen``
+        is assumed to be in degree.
+    IgnoreBlinks: boolean, default=False
+        If True, missing gaze position is replaced by center coordinates.
+    OversamplingBehavior: int
+        Defines the value of ``hsmvd`` in case Python samples faster than the
+        Eyelink Link provides data.
+
+    Returns
+    -------
+    GazeInfo: list
+        List with elements ``x``,``y``, and ``hsmvd``. ``x`` & ``y`` are gaze
+        coordinates in pixels. ``hsmvd`` is boolean and defines whether gaze
+        left the circle set with FixLen.
     """
 
 
