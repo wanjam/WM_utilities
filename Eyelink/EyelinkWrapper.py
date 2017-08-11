@@ -282,8 +282,8 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
     pylink.closeGraphics()
 
 
-def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET = True, FixLen,
-                   PixPerDeg=[],IgnoreBlinks=False, OversamplingBehavior=0):
+def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET=True, FixLen,
+                   PixPerDeg=[], IgnoreBlinks=False, OversamplingBehavior=0):
     """ Online gaze position output and gaze control for Eyelink 1000+.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
@@ -323,8 +323,28 @@ def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET = True, FixLen,
     """
 
 
+def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
+    """ Sends tab-delimited Message eo EDF
 
+    **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
+    *July 2017*
 
+    Parameters
+    ----------
+    infolist : list
+        a list with information. The first item in the list is used as
+        event-definition (e.g., ['trialOnset', 1, 'Condition X', 0.78])
+        Can take strings, integers, floats
+    el: Eyelink object
+        ...as returned by, e.g., EyelinkStart()
+    """
+    # prepend identifier if necessary
+    if infolist[0] is not '>':
+        infolist.insert(0, '>')
+    # make it a tab delimited list and convert everything to string
+    msg = '\t'.join(str(i) for i in infolist)
+    # send to Eyetracker
+    el.sendMessage(msg)
 
 
 
