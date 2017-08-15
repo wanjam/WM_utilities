@@ -19,7 +19,7 @@ absolutely unrelated. So ``pip`` or ``conda install`` won't work!
 # import dependencies to global
 import pylink
 from os import path, getcwd, mkdir
-
+from numpy import sqrt as np_sqrt, sum as np_sum, array as np_array
 
 def AvoidWrongTriggers():
     """ Throws an error if Eyelink is connected but not configured.\n
@@ -58,6 +58,7 @@ def AvoidWrongTriggers():
         configure it!"""
         print(msg)
         raise SystemExit
+    return
 
 
 def EyelinkCalibrate(dispsize, el=pylink.getEYELINK(),
@@ -89,6 +90,43 @@ def EyelinkCalibrate(dispsize, el=pylink.getEYELINK(),
     pylink.openGraphics()
     el.doTrackerSetup()
     pylink.closeGraphics()
+    return
+
+
+def EyelinkDriftCheck(TargetLoc, el=pylink.getEYELINK()):
+    """ Performs drift check for Eyelink 1000+.
+
+    **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
+    *July 2017*
+
+    Parameters:
+    ----------
+    TargetLoc : tuple
+        two-item tuple x & y coordinates of the target in px
+        Usually screen center
+    el :
+        Eyelink object, optional
+
+    Returns:
+    --------
+    Success: bool
+        was driftcheck successful?
+    """
+    el = pylink.EyeLink("100.1.1.1")
+    success = True
+    while 1:
+        # if EL is connected in normal or broadcast mode
+        if el.isConnected() not in (1, 2):
+            success = False
+            return
+        # run check
+        status = el.doDriftCorrect(TargetLoc[0], TargetLoc[1], 1, 1)
+        # check how driftcorrection went
+        if status is pylink.TERMINATE_KEY:
+            success = False
+        if status is not pylink.ESC_KEY:
+            break
+    return success
 
 
 def EyelinkStart(dispsize, Name, bits=32, dummy=False,
@@ -141,7 +179,6 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
 
     # initiate graphics
     pylink.openGraphics(dispsize, bits)
-
     # Open EDF file on host
     el.openDataFile(Name)
 
@@ -208,8 +245,13 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
     el.sendCommand('clear_screen 0')
     pylink.msecDelay(500)
 
+    # set to realtime mode
+    pylink.beginRealTimeMode(200)
     # start recording
-    el.startRecording()
+    # note: sending everything over the link *potentially* causes buffer
+    # overflow. However, with modern PCs and EL1000+ this shouldn't be a real
+    # problem
+    el.startRecording(1, 1, 1, 1)
 
     # to activate parallel port readout without modifying the FINAL.INI on the
     # eyelink host pc, uncomment these lines
@@ -234,11 +276,11 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
 #    el.sendCommand('create_button 5 9 0x80 0')
 #    el.sendCommand('input_data_ports  = 9')
 #    el.sendCommand('input_data_masks = 0xFF')
-
+    el.getNewestSample()
     # mark end of Eyelinkstart in .edf
     el.sendMessage('>EndOfEyeLinkStart')
     # return Eyelink object
-    return(el)
+    return el
 
 
 def EyelinkStop(Name, el=pylink.getEYELINK()):
@@ -259,6 +301,8 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
     # Check filename
     if '.edf' not in Name.lower():
             Name += '.edf'
+    # stop realtime mode
+    pylink.endRealTimeMode(200)
     # make sure all experimental procedures finished
     pylink.msecDelay(1000)
     # stop the recording
@@ -280,10 +324,12 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
         print('Error while pulling EDF file. Try to find it on Eyelink host..')
     el.close()
     pylink.closeGraphics()
+    return
 
 
-def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET=True, FixLen,
-                   PixPerDeg=[], IgnoreBlinks=False, OversamplingBehavior=0):
+def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
+                   isET=True, PixPerDeg=[], IgnoreBlinks=False,
+                   OversamplingBehavior=None):
     """ Online gaze position output and gaze control for Eyelink 1000+.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
@@ -291,8 +337,14 @@ def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET=True, FixLen,
 
     Parameters
     ----------
-    dispsize : tuple
-        two-item tuple width & height in px
+    targetLoc : tuple
+        two-item tuple x & y coordinates in px; defines where subject should
+        look at.
+    FixLen : int
+        A circle around a specified point is set as area that subjects are
+        allowed to look at. ``FixLen`` defines the radius of that circle.
+        Can be in degree or pixels. If ``PixPerDeg`` is not empty, assumes
+        degree, else pixels.
     el: Eyelink object
         ...as returned by, e.g., ``EyelinkStart()``. You can try to run it
         without passing ``el``. In that case ``EyelinkGetGaze()`` will try to
@@ -300,31 +352,109 @@ def EyelinkGetGaze(dispsize, el=pylink.getEYELINK(), isET=True, FixLen,
     isET: boolean, default=True
         Is Eyetracker connected? If ``False``, returns display center as
         coordinates and ``hsmvd=False``.
-    FixLen : int
-        A circle around a specified point is set as area that subjects are
-        allowed to look at. ``FixLen`` defines the radius of that circle.
-        Can be in degree or pixels. If ``PixPerDeg`` is not empty, assumes
-        degree, else pixels.
     PixPerDeg: float
         How many pixels per one degree of visual angle? If provided, ``FixLen``
         is assumed to be in degree.
     IgnoreBlinks: boolean, default=False
         If True, missing gaze position is replaced by center coordinates.
-    OversamplingBehavior: int
-        Defines the value of ``hsmvd`` in case Python samples faster than the
-        Eyelink Link provides data.
+    OversamplingBehavior: None
+        Defines what is returned if nothing new is available.
 
     Returns
     -------
-    GazeInfo: list
-        List with elements ``x``,``y``, and ``hsmvd``. ``x`` & ``y`` are gaze
+    GazeInfo: dict
+        Dict with elements ``x``,``y``, and ``hsmvd``. ``x`` & ``y`` are gaze
         coordinates in pixels. ``hsmvd`` is boolean and defines whether gaze
         left the circle set with FixLen.
     """
+    # IF EYETRACKER IS CONNECTED...
+    if isET:
+        # This is just for clarity
+        RIGHT_EYE = 1
+        LEFT_EYE = 0
+        BINOCULAR = 2
+
+        # ---------- deprecated but maybe useful later...----------------------
+        # check if new data available via link
+        # eventType = el.getNextData()
+        # if it's a saccade or fixation, get newest gaze data available
+        # if eventType in {pylink.STARTFIX, pylink.FIXUPDATE, pylink.ENDFIX,
+        #                 pylink.STARTSACC, pylink.ENDSACC}:
+        # if it's a blink, adjust output accordingly
+        # elif eventType in {pylink.STARTBLINK,pylink.ENDBLINK}:
+        # ---------------------------------------------------------------------
+
+        # Get the newest data sample
+        sample = el.getNewestSample()
+        # get the newest event
+        event = el.getNextData()
+        # returns none, if no new sample available
+        if sample is not None:
+            # check which eye has been tracked and retrieve data for this eye
+            if el.eyeAvailable() is LEFT_EYE:
+                # getGaze() return Two-item tuple in the format of
+                # (float, float). -> (x,y) in px
+                # getPupilSize return float in arbitrary units. The meaning of
+                # this depends on the settings made (area or diameter)
+                gaze = sample.getLeftEye().getGaze()
+                pupil = sample.getLeftEye().getPupilSize()
+            elif el.eyeAvailable() is RIGHT_EYE:
+                gaze = sample.getRightEye().getGaze()
+                pupil = sample.getRightEye().getPupilSize()
+            elif el.eyeAvailable() is BINOCULAR:
+                print 'Binocular mode not yet implemented'
+                return None
+            else:
+                raise Exception('Could not detect which eye has been tracked')
+
+            # Check if subject blinks or if data are just randomly missing
+            if pylink.MISSING_DATA in gaze:
+                # check how sure we are whether it is a blink
+                if event is pylink.STARTBLINK:
+                    print('Subject is definitely blinking')  # debugging
+                    blinked = True
+                elif pupil == 0:
+                    print('Subject is probably blinking')  # debugging
+                    blinked = True
+                else:
+                    print('Missing data but no blink?')  # debugging
+                    blinked = False
+                # assign values accordingly
+                if blinked and not IgnoreBlinks:
+                    hsmvd = True
+                elif blinked and IgnoreBlinks:
+                    hsmvd = False
+                    gaze = targetLoc
+                elif not blinked:
+                    hsmvd = True
+            else:
+                # transform location data to numpy arrays, so we can calculate
+                # euclidean distance
+                a = np_array(targetLoc)
+                b = np_array(gaze)
+                # get euclidean distance in px
+                dist = np_sqrt(np_sum((a-b)**2))
+                # check if we know how many px form one degree.
+                # If we do, convert to degree
+                if PixPerDeg is not []:
+                    dist = dist/PixPerDeg
+                # Now check whether gaze is in allowed frame
+                hsmvd = dist >= FixLen
+
+            # return dict
+            return {'x': gaze[0], 'y': gaze[1], 'hsmvd': hsmvd,
+                    'pupilSize': pupil}
+        # If no new sample is available return None
+        elif sample is None:
+            return None
+    # IF EYETRACKER NOT CONNECTED RETURN TARGETLOCATION AND NO PUPIL SIZE
+    elif not isET:
+        return {'x': targetLoc[0], 'y': targetLoc[1], 'hsmvd': False,
+                'pupilSize': None}
 
 
 def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
-    """ Sends tab-delimited Message eo EDF
+    """ Sends tab-delimited message to EDF
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
     *July 2017*
@@ -345,6 +475,7 @@ def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
     msg = '\t'.join(str(i) for i in infolist)
     # send to Eyetracker
     el.sendMessage(msg)
+    return
 
 
 
