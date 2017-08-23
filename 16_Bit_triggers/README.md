@@ -1,5 +1,7 @@
 # Splitting a 16-bit trigger into two 8-bit trigger channels
 
+Note: the fileio plugin is copyrighted by Arnaud Delorme, SCCN, INC, UCSD and licensed under GPL
+
 Our lab uses a Biosemi Active two system. Theoretically, this system is capable of reading 24bit triggers. However, we only send 8bit triggers from our PC and additional 8bit triggers from our Monitor (a Viewpixx /EEG).
 That is, pins 1-8 are PC triggers and pins 9-13 are the second device.
 However, the resulting .bdf file contains a single(!) event-channel with both kinds of triggers clashed together to one 16bit channel.
