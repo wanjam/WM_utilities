@@ -20,6 +20,10 @@ absolutely unrelated. So ``pip`` or ``conda install`` won't work!
 import pylink
 from os import path, getcwd, mkdir
 from numpy import sqrt as np_sqrt, sum as np_sum, array as np_array
+from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
+# SR-Research's EyeLinkCoreGraphicsPsychoPy can be retrieved here:
+# https://www.sr-support.com/forum/eyelink/programming/5548-a-psychopy-implementation-of-the-eyelink-coregraphics
+
 
 def AvoidWrongTriggers():
     """ Throws an error if Eyelink is connected but not configured.\n
@@ -61,8 +65,8 @@ def AvoidWrongTriggers():
     return
 
 
-def EyelinkCalibrate(dispsize, el=pylink.getEYELINK(),
-                     colors=((0, 0, 0), (192, 192, 192)), bits=32):
+def EyelinkCalibrate(targetloc=(win.size[0]/2, win.size[1]/2),
+                     el=pylink.getEYELINK()):
     """ Performs calibration for Eyelink 1000+.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
@@ -70,66 +74,38 @@ def EyelinkCalibrate(dispsize, el=pylink.getEYELINK(),
 
     Parameters:
     ----------
-    dispsize : tuple
+    target : tuple
         two-item tuple width & height in px
-    el :
+    el     :
         Eyelink object, optional
-    colors  : Tuple, Optional.
-        Tuple with two RGB triplets
-    bits    : integer
-        color-depth, defaults to 32
     """
-    # open eyelink host graphics
-    pylink.openGraphics(dispsize, bits)
-    # Sets the calibration target and background color
-    pylink.setCalibrationColors(colors[0], colors[1])
-    # Select best size for calibration target
-    pylink.setTargetSize(int(dispsize[0]/70), int(dispsize[0]/300))
-    pylink.setCalibrationSounds("", "", "")
-    pylink.setDriftCorrectSounds("", "", "")
-    pylink.openGraphics()
-    el.doTrackerSetup()
-    pylink.closeGraphics()
-    return
+    res = el.doTrackerSetup(targetloc[0],targetloc[1],1,1)
+    return res
 
 
-def EyelinkDriftCheck(TargetLoc, el=pylink.getEYELINK()):
-    """ Performs drift check for Eyelink 1000+.
+def EyelinkDriftCheck(targetloc=(win.size[0]/2, win.size[1]/2),
+                      el=pylink.getEYELINK()):
+    """ Performs Driftcheck for Eyelink 1000+.
 
     **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
     *July 2017*
 
     Parameters:
     ----------
-    TargetLoc : tuple
-        two-item tuple x & y coordinates of the target in px
-        Usually screen center
-    el :
+    target : tuple
+        two-item tuple width & height in px
+    el       :
         Eyelink object, optional
-
-    Returns:
-    --------
-    Success: bool
-        was driftcheck successful?
     """
-    el = pylink.EyeLink("100.1.1.1")
-    success = True
-    while 1:
-        # if EL is connected in normal or broadcast mode
-        if el.isConnected() not in (1, 2):
-            success = False
-            return
-        # run check
-        status = el.doDriftCorrect(TargetLoc[0], TargetLoc[1], 1, 1)
-        # check how driftcorrection went
-        if status is pylink.TERMINATE_KEY:
-            success = False
-        if status is not pylink.ESC_KEY:
-            break
-    return success
+        # drift check
+    try:
+        res = el.doDriftCorrect(targetloc[0],targetloc[1],1,1)
+    except:
+        res = el.doTrackerSetup()
+    return res
 
 
-def EyelinkStart(dispsize, Name, bits=32, dummy=False,
+def EyelinkStart(dispsize, Name, win, bits=32, dummy=False,
                  colors=((0, 0, 0), (192, 192, 192))):
     """ Performs startup routines for the EyeLink 1000 Plus eyetracker.
 
@@ -144,6 +120,8 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
         filename for the edf. Doesn't have to, but can, end on '.edf'
         Maximum length is 8 (without '.edf').
         Possible alphanumeric input: 'a-z', 'A-Z', '0-9', '-' & '_'
+    win     : window object
+        You necessarily need to open a psychopy window first!
     bits    : integer
         color-depth, defaults to 32
     dummy   : boolean
@@ -176,14 +154,27 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
         el = pylink.EyeLink(None)
     else:
         el = pylink.EyeLink("100.1.1.1")
-
-    # initiate graphics
-    pylink.openGraphics(dispsize, bits)
+        
     # Open EDF file on host
     el.openDataFile(Name)
-
+    
+    # set file preamble
+    currentdir = path.basename(getcwd())
+    FilePreamble = "''Eyetracking Dataset AE Busch WWU Muenster Experiment: "
+    FilePreamble += currentdir + "''"
+    el.sendcommand("add_file_preamble_text " + FilePreamble)
+    
+    # this function calls the custom calibration routine "EyeLinkCoreGraphicsPsychopy.py"
+    genv = EyeLinkCoreGraphicsPsychoPy(el, win)
+    pylink.openGraphicsEx(genv)
+    
+    # set tracker offline to change configuration
+    el.setOfflineMode()
     # flush old keys
     pylink.flushGetkeyQueue()
+
+    # set sampling rate
+    el.sendCommand('sample_rate 1000')
 
     # Sets the display coordinate system and sends mesage to that
     # effect to EDF file;
@@ -228,12 +219,6 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
         el.sendCommand("link_sample_data = LEFT,RIGHT,GAZE,GAZERES,AREA,"
                        "STATUS,INPUT")
 
-    # set file preamble
-    currentdir = path.basename(getcwd())
-    FilePreamble = "''Eyetracking Dataset AE Busch WWU Muenster Experiment: "
-    FilePreamble += currentdir + "''"
-    el.sendcommand("add_file_preamble_text " + FilePreamble)
-
     # run initial calibration
     # 13-Pt Grid calibration
     el.sendCommand('calibration_type = HV13')
@@ -241,8 +226,7 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
 
     # put tracker in idle mode and wait 50ms, then really start it.
     el.sendMessage('SETUP_FINISHED')
-    el.sendCommand('set_idle_mode')
-    el.sendCommand('clear_screen 0')
+    el.setOfflineMode()
     pylink.msecDelay(500)
 
     # set to realtime mode
@@ -276,7 +260,6 @@ def EyelinkStart(dispsize, Name, bits=32, dummy=False,
 #    el.sendCommand('create_button 5 9 0x80 0')
 #    el.sendCommand('input_data_ports  = 9')
 #    el.sendCommand('input_data_masks = 0xFF')
-    el.getNewestSample()
     # mark end of Eyelinkstart in .edf
     el.sendMessage('>EndOfEyeLinkStart')
     # return Eyelink object

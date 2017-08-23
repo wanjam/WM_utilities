@@ -12,5 +12,7 @@ your Psychtoolbox script.
 
 ### Python functions
 
-import the module at the top of your Psychopy/PyGame script.
-Note that this module automatically imports pylink into global namespace.
+Place EyelinkWrapper.py and EyeLinkCoreGraphicsPsychoPy.py in your working directory.
+import the EyelinkWrapper module at the top of your Psychopy script.
+
+Note: EyeLinkCoreGraphicsPsychoPy is developed, maintained and copyrighted by SR-Research and distributed under GPL. It is included here with SR-Research's permission. For the most recent version check their support forum.
