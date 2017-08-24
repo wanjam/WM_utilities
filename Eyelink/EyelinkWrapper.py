@@ -78,7 +78,7 @@ def AvoidWrongTriggers():
     return
 
 
-def EyelinkCalibrate(targetloc=(win.size[0]/2, win.size[1]/2),
+def EyelinkCalibrate(targetloc=(1920, 1080),
                      el=pylink.getEYELINK()):
     """ Performs calibration for Eyelink 1000+.
 
@@ -92,11 +92,11 @@ def EyelinkCalibrate(targetloc=(win.size[0]/2, win.size[1]/2),
     el     :
         Eyelink object, optional
     """
-    res = el.doTrackerSetup(targetloc[0],targetloc[1],1,1)
-    return res
+    el.doTrackerSetup(targetloc[0],targetloc[1])
+    return
 
 
-def EyelinkDriftCheck(targetloc=(win.size[0]/2, win.size[1]/2),
+def EyelinkDriftCheck(targetloc=(1920, 1080),
                       el=pylink.getEYELINK()):
     """ Performs Driftcheck for Eyelink 1000+.
 
@@ -149,7 +149,7 @@ def EyelinkStart(dispsize, Name, win, bits=32, dummy=False,
              although they can use pylink.getEYELINK()
              to find it automatically.
     """
-
+    print('. ')
     # get filename
     if '.edf' not in Name.lower():
         if len(Name) > 8:
@@ -161,41 +161,43 @@ def EyelinkStart(dispsize, Name, win, bits=32, dummy=False,
         if len(Name) > 12:
             print('EDF filename too long! (1-8 characters/letters)')
             raise SystemExit
-
+    print('. ')
     # initialize tracker object
     if dummy:
         el = pylink.EyeLink(None)
     else:
         el = pylink.EyeLink("100.1.1.1")
-        
+    print('. ')
     # Open EDF file on host
     el.openDataFile(Name)
-    
+    print('. ')
     # set file preamble
     currentdir = path.basename(getcwd())
-    FilePreamble = "''Eyetracking Dataset AE Busch WWU Muenster Experiment: "
-    FilePreamble += currentdir + "''"
-    el.sendcommand("add_file_preamble_text " + FilePreamble)
-    
+    FilePreamble = "add_file_preamble_text \'"
+    FilePreamble += "Eyetracking Dataset AE Busch WWU Muenster Experiment: "
+    FilePreamble += currentdir + "\'"
+    el.sendCommand(FilePreamble)
+    print('. ')
     # this function calls the custom calibration routine "EyeLinkCoreGraphicsPsychopy.py"
     genv = EyeLinkCoreGraphicsPsychoPy(el, win)
     pylink.openGraphicsEx(genv)
-    
+    print('. ')
     # set tracker offline to change configuration
     el.setOfflineMode()
+    print('. ')
     # flush old keys
     pylink.flushGetkeyQueue()
-
+    print('. ')
     # set sampling rate
     el.sendCommand('sample_rate 1000')
-
+    print('. ')
     # Sets the display coordinate system and sends mesage to that
     # effect to EDF file;
     el.sendCommand("screen_pixel_coords =  0 0 %d %d" %
                    (dispsize[0] - 1, dispsize[1] - 1))
     el.sendMessage("DISPLAY_COORDS  0 0 %d %d" %
                    (dispsize[0] - 1, dispsize[1] - 1))
-
+    print('. ')
     # select parser configuration for online saccade etc detection
     ELversion = el.getTrackerVersion()
     ELsoftVer = 0
@@ -211,37 +213,37 @@ def EyelinkStart(dispsize, Name, win, bits=32, dummy=False,
     else:
         el.sendCommand("saccade_velocity_threshold = 35")
         el.sendCommand("saccade_acceleration_threshold = 9500")
-
-    # set EDF file contents
+    print('. ')
+    # set EDF file contents AREA
     el.sendCommand("file_event_filter = LEFT,RIGHT,FIXATION,"
-                   "SACCADE,AREA,BLINK,MESSAGE,BUTTON,INPUT")
+                   "SACCADE,BLINK,MESSAGE,BUTTON,INPUT")
     if ELsoftVer >= 4:
         el.sendCommand("file_sample_data = LEFT,RIGHT,GAZE,HREF,"
                        "AREA,HTARGET,GAZERES,STATUS,INPUT")
     else:
         el.sendCommand("file_sample_data = LEFT,RIGHT,GAZE,HREF,"
                        "AREA,GAZERES,STATUS,INPUT")
-
-    # set link data (online interaction)
+    print('. ')
+    # set link data (online interaction)AREA
     el.sendCommand("link_event_filter = LEFT,RIGHT,FIXATION,SACCADE,"
-                   "AREA,BLINK,MESSAGE,BUTTON,INPUT")
+                   "BLINK,MESSAGE,BUTTON,INPUT")
     if ELsoftVer >= 4:
         el.sendCommand("link_sample_data = LEFT,RIGHT,GAZE,GAZERES,AREA,"
                        "HTARGET,STATUS,INPUT")
     else:
         el.sendCommand("link_sample_data = LEFT,RIGHT,GAZE,GAZERES,AREA,"
                        "STATUS,INPUT")
-
+    print('. ')
     # run initial calibration
     # 13-Pt Grid calibration
     el.sendCommand('calibration_type = HV13')
-    EyelinkCalibrate(el, dispsize, colors)
-
+    EyelinkCalibrate(dispsize, el)
+    print('. ')
     # put tracker in idle mode and wait 50ms, then really start it.
     el.sendMessage('SETUP_FINISHED')
     el.setOfflineMode()
     pylink.msecDelay(500)
-
+    print('. ')
     # set to realtime mode
     pylink.beginRealTimeMode(200)
     # start recording
@@ -298,7 +300,7 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
     if '.edf' not in Name.lower():
             Name += '.edf'
     # stop realtime mode
-    pylink.endRealTimeMode(200)
+    pylink.endRealTimeMode(0)
     # make sure all experimental procedures finished
     pylink.msecDelay(1000)
     # stop the recording
@@ -323,7 +325,7 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
     return
 
 
-def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
+def EyelinkGetGaze(targetLoc, FixLen, dispsize, el=pylink.getEYELINK(),
                    isET=True, PixPerDeg=[], IgnoreBlinks=False,
                    OversamplingBehavior=None):
     """ Online gaze position output and gaze control for Eyelink 1000+.
@@ -335,7 +337,7 @@ def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
     ----------
     targetLoc : tuple
         two-item tuple x & y coordinates in px; defines where subject should
-        look at.
+        look at ([0, 0] is center - just as psychopy assumes it.)
     FixLen : int
         A circle around a specified point is set as area that subjects are
         allowed to look at. ``FixLen`` defines the radius of that circle.
@@ -345,6 +347,8 @@ def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
         ...as returned by, e.g., ``EyelinkStart()``. You can try to run it
         without passing ``el``. In that case ``EyelinkGetGaze()`` will try to
         find ``el``.
+    dispsize : tuple
+        Needed because PP thinks (0,0)=center, but EL thinks (0,0)= topleft
     isET: boolean, default=True
         Is Eyetracker connected? If ``False``, returns display center as
         coordinates and ``hsmvd=False``.
@@ -387,14 +391,14 @@ def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
         # returns none, if no new sample available
         if sample is not None:
             # check which eye has been tracked and retrieve data for this eye
-            if el.eyeAvailable() is LEFT_EYE:
+            if el.eyeAvailable() is LEFT_EYE and sample.isLeftSample():
                 # getGaze() return Two-item tuple in the format of
                 # (float, float). -> (x,y) in px
                 # getPupilSize return float in arbitrary units. The meaning of
                 # this depends on the settings made (area or diameter)
                 gaze = sample.getLeftEye().getGaze()
                 pupil = sample.getLeftEye().getPupilSize()
-            elif el.eyeAvailable() is RIGHT_EYE:
+            elif el.eyeAvailable() is RIGHT_EYE and sample.isRightSample():
                 gaze = sample.getRightEye().getGaze()
                 pupil = sample.getRightEye().getPupilSize()
             elif el.eyeAvailable() is BINOCULAR:
@@ -424,6 +428,8 @@ def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
                 elif not blinked:
                     hsmvd = True
             else:
+                # Eyelink thinks (0,0) = topleft, PsyPy thinks it's center...
+                gaze = (gaze[0]-dispsize[0]/2, dispsize[1]/2-gaze[1])
                 # transform location data to numpy arrays, so we can calculate
                 # euclidean distance
                 a = np_array(targetLoc)
@@ -432,7 +438,7 @@ def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
                 dist = np_sqrt(np_sum((a-b)**2))
                 # check if we know how many px form one degree.
                 # If we do, convert to degree
-                if PixPerDeg is not []:
+                if PixPerDeg != []:
                     dist = dist/PixPerDeg
                 # Now check whether gaze is in allowed frame
                 hsmvd = dist >= FixLen
@@ -442,7 +448,7 @@ def EyelinkGetGaze(targetLoc, FixLen, el=pylink.getEYELINK(),
                     'pupilSize': pupil}
         # If no new sample is available return None
         elif sample is None:
-            return None
+            return OversamplingBehavior
     # IF EYETRACKER NOT CONNECTED RETURN TARGETLOCATION AND NO PUPIL SIZE
     elif not isET:
         return {'x': targetLoc[0], 'y': targetLoc[1], 'hsmvd': False,
@@ -464,6 +470,9 @@ def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
     el: Eyelink object
         ...as returned by, e.g., EyelinkStart()
     """
+    # if it's not a list convert
+    if not isinstance(infolist,list):
+        infolist = [infolist]
     # prepend identifier if necessary
     if infolist[0] is not '>':
         infolist.insert(0, '>')
