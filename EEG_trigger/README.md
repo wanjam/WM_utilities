@@ -1,6 +1,6 @@
 * These files are just wrapper functions. They assure that the syntax within PsychToolbox experiments is the same across OSs.
-*_run Install_EEG_trigger() as admin/root after cloning!_
-	* This will take care of getting the right drivers.
+* __run Install_EEG_trigger() as admin/root after cloning to install the right drivers for your system!__
+
 * Windows functions use Frank Schieber's `Mex-File Plug-in for Fast MATLAB Port I/O`. The original source is http://apps.usd.edu/coglab/psyc770/IO64.html
 * Linux functions use Andreas Widmann's `ppdev_mex` (https://github.com/widmann/ppdev-mex).
 * On Ubuntu you need to make sure that the port is actually not blocked by other modules:
