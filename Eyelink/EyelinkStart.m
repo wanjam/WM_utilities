@@ -19,7 +19,7 @@ function [P,window] = EyelinkStart(P,window,Name,inputDialog,FilePreamble)
 %
 % Wanja Moessing, June 2016
 % WM: added FilePreamble on 26/09/2016
-
+% WM: added custom calibrationpoints on 08/09/2017
 
 %  Copyright (C) 2016 Wanja Mössing
 %
@@ -139,6 +139,23 @@ Eyelink('command','screen_pixel_coords = %ld %ld %ld %ld', 0, 0, P.myWidth-1, P.
 Eyelink('message', 'DISPLAY_COORDS %ld %ld %ld %ld', 0, 0, P.myWidth-1, P.myHeight-1);
 Eyelink('command', 'calibration_type = HV9'); %9-Pt Grid calibration
 
+% modify calibration and validation target locations
+if ~isempty(P.CalibLocations)
+    Eyelink('command', 'generate_default_targets = NO');
+    T=CalibLocations;
+    Eyelink('command','calibration_samples = 9');
+    Eyelink('command','calibration_sequence = 0,1,2,3,4,5,6,7,8,9');
+    Eyelink('command','calibration_targets = %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d',...
+        T(1), T(2), T(3), T(4), T(5), T(6), T(7), T(8), T(9),...
+        T(10), T(11), T(12), T(13), T(14), T(15), T(16), T(17), T(18));
+    Eyelink('command','validation_samples = 9');
+    Eyelink('command','validation_sequence = 0,1,2,3,4,5,7,8,9');
+    Eyelink('command','validation_targets = %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d',...
+        T(1), T(2), T(3), T(4), T(5), T(6), T(7), T(8), T(9),...
+        T(10), T(11), T(12), T(13), T(14), T(15), T(16), T(17), T(18));
+else
+    Eyelink('command', 'generate_default_targets = YES');
+end
 
 % make sure we're still connected.
 if Eyelink('IsConnected')~=1 && P.trackr.dummymode == 0

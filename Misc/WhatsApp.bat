@@ -1,0 +1,1 @@
+start microsoft-edge:https://web.whatsapp.com/
