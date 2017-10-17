@@ -142,17 +142,18 @@ Eyelink('command', 'calibration_type = HV9'); %9-Pt Grid calibration
 % modify calibration and validation target locations
 if ~isempty(P.CalibLocations)
     Eyelink('command', 'generate_default_targets = NO');
-    T=CalibLocations;
-    Eyelink('command','calibration_samples = 9');
-    Eyelink('command','calibration_sequence = 0,1,2,3,4,5,6,7,8,9');
+    T = P.CalibLocations;
+    
+    Eyelink('command','calibration_samples = 10');
+    Eyelink('command','calibration_sequence = 0,1,2,3,4,5,6,7,8,0');
     Eyelink('command','calibration_targets = %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d',...
-        T(1), T(2), T(3), T(4), T(5), T(6), T(7), T(8), T(9),...
-        T(10), T(11), T(12), T(13), T(14), T(15), T(16), T(17), T(18));
-    Eyelink('command','validation_samples = 9');
-    Eyelink('command','validation_sequence = 0,1,2,3,4,5,7,8,9');
+        T(9),T(10),  T(3),T(4),  T(15),T(16),  T(7),T(8),  T(11),T(12),...
+        T(1),T(2),  T(5),T(6),  T(13),T(14),  T(17),T(18));
+    Eyelink('command','validation_samples = 10');
+    Eyelink('command','validation_sequence = 0,1,2,3,4,5,6,7,8,0');
     Eyelink('command','validation_targets = %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d',...
-        T(1), T(2), T(3), T(4), T(5), T(6), T(7), T(8), T(9),...
-        T(10), T(11), T(12), T(13), T(14), T(15), T(16), T(17), T(18));
+        T(9),T(10),  T(3),T(4),  T(15),T(16),  T(7),T(8),  T(11),T(12),...
+        T(1),T(2),  T(5),T(6),  T(13),T(14),  T(17),T(18));
 else
     Eyelink('command', 'generate_default_targets = YES');
 end
@@ -212,7 +213,7 @@ WaitSecs(0.1);
 
 %set eye_used for gaze controla
 P.eye_used = Eyelink('EyeAvailable'); % get eye that's tracked for gaze-control
-if P.eye_used == P.el.BINOCULAR; % if both eyes are tracked
+if P.eye_used == P.el.BINOCULAR % if both eyes are tracked
     P.eye_used = P.el.LEFT_EYE; % use left eye
 end
 
