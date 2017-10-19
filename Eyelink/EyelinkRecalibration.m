@@ -32,10 +32,14 @@ Eyelink('StopRecording');
 EyelinkUpdateDefaults(P.el);
 
 % Hide the mouse cursor;
-Screen('HideCursorHelper', window);
+HideCursor;
+
 EyelinkDoTrackerSetup(P.el);
 % clear tracker display and draw box at center
 Eyelink('Command', 'clear_screen 0')
 Eyelink('Command', 'set_idle_mode');
 WaitSecs(0.05);
-Eyelink('StartRecording',P.trackr.capture(1),P.trackr.capture(2),P.trackr.capture(3),P.trackr.capture(4));    
+% this can optionally take four boolean input values, specifiying
+% the datatypes recorded (file_samples, file_events, link_samples, link_events)
+%Eyelink('StartRecording',P.trackr.capture(1),P.trackr.capture(2),P.trackr.capture(3),P.trackr.capture(4));
+Eyelink('StartRecording');
