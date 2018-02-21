@@ -66,15 +66,14 @@ A typical workflow in Psychtoolbox would look like this:
     
 6. Once your subject is done, run `EyelinkStop.m` **before** closing the Psychtoolbox-Screen.  
   Code should look something like this:  
-  ```matlab
-  EyelinkStop(P);
-  sca;
-  ```
-  `P` only needs subfield `P.trackr.edfFile`, which is the current filename and should have been created during the call to `EyelinkStart`.
-  `EyelinkStop` does the following:
-  
-  * it tells the eyetracker to stop recording
-  * it copies the datafile from the tracker-pc to the stimulation-pc  
+	  ```matlab
+	  EyelinkStop(P);
+	  sca;
+	  ```
+	  `P` only needs subfield `P.trackr.edfFile`, which is the current filename and should have been created during the call to `EyelinkStart`.
+	  `EyelinkStop` does the following:
+  	1. it tells the eyetracker to stop recording
+  	2. it copies the datafile from the tracker-pc to the stimulation-pc  
 	
 #### Special Case: `EyelinkAvoidWrongTriggers`
 
