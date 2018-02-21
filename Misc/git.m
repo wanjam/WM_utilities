@@ -7,6 +7,12 @@ if nargin>1
 else
     cmd = varargin{:};
 end
-system(sprintf('git %s', cmd));
+
+if strcmp(cmd, 'admit')
+    system(sprintf('git %s', 'add -A'));
+    system(sprintf('git %s', 'commit'));
+else
+    system(sprintf('git %s', cmd));
+end
 end
 
