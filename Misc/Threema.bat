@@ -1,0 +1,1 @@
+start chrome.exe https://web.threema.ch
