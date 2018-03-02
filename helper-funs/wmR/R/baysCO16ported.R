@@ -1,51 +1,65 @@
-# This is a ported version of Paul Bays' Matlab code published at http://www.paulbays.com/code/CO16/
-# This code is released under a GNU General Public License:
-# feel free to use and adapt these functions as you like, but credit should be given to Paul Bays if they contribute to your work, by citing:
-# Schneegans S & Bays PM. No fixed item limit in visuospatial working memory. Cortex 83: 181-193 (2016)
+# wmR::baysCO16ported is an R port of Paul Bays' CO16 Matlab code.
+# Copyright (C) 2017 Paul Bays, Port 2018 Wanja Mössing
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-##########################################################################
-#  Copyright 2018 Wanja Moessing. This program is free software: you can #
-#  redistribute it and/or modify it under the terms of the GNU General   #
-#  Public License as published by the Free Software Foundation.          #
-##########################################################################
-
-# ported version by Wanja Moessing, moessing@wwu.de
-# % CO16_FIT (X, T, NT)
-# %   Returns maximum likelihood parameters B for a mixture model describing
-# %   recall responses X in terms of target T, non-target NT, and uniform
-# %   responses. Inputs should be in radians, -PI <= X < PI. Fitting is based
-# %   on an EM algorithm with multiple starting parameters.
-# %
-# %   B = CO16_FIT (X, T, NT) returns a vector [K pT pN pU], where K is
-# %   the concentration parameter of a Von Mises distribution capturing
-# %   response variability, pT is the probability of responding with the
-# %   target value, pN the probability of responding with a non-target
-# %   value, and pU the probability of responding "randomly".
-# %
-# %   [B LL] = CO16_FIT (X, T, NT) additionally returns the log likelihood LL.
-# %
-# %   [B LL W] = CO16_FIT (X, T, NT) additionally returns a weight matrix of
-# %   trial-by-trial posterior probabilities that responses come from each of
-# %   the three mixture components. Each row of W corresponds to a separate
-# %   trial and is of the form [wT wN wU], corresponding to the probability
-# %   the response comes from the target, non-target or uniform response
-# %   distributions, respectively.
-# %
-# %   Refs:
-#   %   Schneegans S & Bays PM. No fixed item limit in visuospatial working
-# %   memory. Cortex 83: 181-193 (2016)
-# %
-# %   Bays PM, Catalao RFG & Husain M. The precision of visual working
-# %   memory is set by allocation of a shared resource. Journal of Vision
-# %   9(10): 7, 1-11 (2009)
-# %
-# %   --> www.paulbays.com
-
+#' @title CO16_FIT
+#' @description This is a ported version of Paul Bays' Matlab code published at http://www.paulbays.com/code/CO16/
+#'   ----------------------------------
+#'   Original documentation
+#'   ----------------------------------
+#'
+#'   This code is released under a GNU General Public License:
+#'   feel free to use and adapt these functions as you like, but credit should be given to Paul Bays if they contribute to your work, by citing:
+#'   Schneegans S & Bays PM. No fixed item limit in visuospatial working memory. Cortex 83: 181-193 (2016)
+#'
+#'   Returns maximum likelihood parameters B (res[1]) for a mixture model describing
+#'   recall responses X in terms of target TT, non-target NT, and uniform
+#'   responses. Inputs should be in radians, -\code{pi} <= X < \code{pi}. Fitting is based
+#'   on an EM algorithm with multiple starting parameters.
+#'
+#'   \code{CO16_fit(X, TT, NT)} returns a three-element list with:
+#'   1. vector \code{B c(K, pT, pN, pU)}, where K is
+#'     the concentration parameter of a Von Mises distribution capturing
+#'     response variability, pT is the probability of responding with the
+#'     target value, pN the probability of responding with a non-target
+#'     value, and pU the probability of responding "randomly".
+#'
+#'   2. vector \code{LL} additionally returns the log likelihood LL.
+#'
+#'   3. vector \code{W} additionally returns a weight matrix of
+#'     trial-by-trial posterior probabilities that responses come from each of
+#'     the three mixture components. Each row of W corresponds to a separate
+#'     trial and is of the form \code{c(wT, wN, wU)}, corresponding to the probability
+#'     the response comes from the target, non-target or uniform response
+#'     distributions, respectively.
+#'
+#' @references Schneegans S & Bays PM. No fixed item limit in visuospatial working
+#'   memory. Cortex 83: 181-193 (2016),
+#'   Bays PM, Catalao RFG & Husain M. The precision of visual working
+#'   memory is set by allocation of a shared resource. Journal of Vision
+#'   9(10): 7, 1-11 (2009)
+#'
+#' @author Paul Bays, R port by Wanja Moessing
+#' @param X = [n*1,1] vector of responses
+#' @param TT = [n*1,1] column vector of Target orientations
+#' @param NT = [n*1, m] matrix of non-target values
+#' @name  CO16_fit
+#' @export CO16_fit
+#' @importFrom pracma size repmat ones zeros
+#' @importFrom CircStats A1inv
 CO16_fit <- function(X, TT = NULL, NT=NULL) {
-  require(pracma) # size, repmat etc
-  # X = vector of responses
-  # TT = vector of Target orientations
-  # NT = (n×m) matrix of non-target values
   n = size(X, 1)
 
   if (is.null(TT)) { TT = zeros(n, 1)}
@@ -92,10 +106,17 @@ CO16_fit <- function(X, TT = NULL, NT=NULL) {
   return(list(B, LL, W))
 }
 
-
-
+#' @title CO16_function
+#' @description sub-function of CO16_fit
+#' @author Paul Bays, R port by Wanja Moessing
+#' @param X = [n*1,1] vector of responses
+#' @param TT = [n*1,1] column vector of Target orientations
+#' @param NT = [n*1, m] matrix of non-target values
+#' @param B_start starting values
+#' @importFrom pracma size repmat ones zeros
+#' @importFrom CircStats A1inv
+#' @export CO16_function
 CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
-  require(pracma) #for repmat, size, ones, zeros
   # --> www.paulbays.com | R-port github.com/wanjam
   if  (is.null(TT) || size(X, 2) > 1 || size(TT, 2) > 1 ||
        size(X, 1) != size(TT, 1) || is.null(NT) && (size(NT, 1) != size(X, 1) ||
@@ -148,7 +169,7 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
     if (nn == 0) {
       Wn = zeros(size(NE))
     } else {
-      Wn = Pn / nn * vonmisespdf(NE, 0, K)
+      Wn = Pn / nn * wmR::vonmisespdf(NE, 0, K)
     }
 
     W = t(t(rowSums(cbind(Wt, Wn, Wg))))
@@ -200,31 +221,34 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
   return(list(B, LL, W))
 }
 
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%   Copyright 2017 Paul Bays. This program is free software: you can     %
-#%   redistribute it and/or modify it under the terms of the GNU General  %
-#%   Public License as published by the Free Software Foundation.         %
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+#' @title vonmisespdf
+#' @description Von Mises probability density function (pdf)
+#'  \code{vonmisespdf(x, mu, K)} returns the pdf of the Von Mises
+#'   distribution with mean MU and concentration parameter K,
+#'   evaluated at the values in THETA (given in radians).
+#' @param x Theta
+#' @param mu mu
+#' @param K Kappa
+#' @author Wanja Mössing
+#' @export vonmisespdf
 vonmisespdf <- function(x, mu, K) {
-  # VONMISESPDF Von Mises probability density function (pdf)
-  #   Y = VONMISESPDF(THETA,MU,K) returns the pdf of the Von Mises
-  #   distribution with mean MU and concentration parameter K,
-  #   evaluated at the values in THETA (given in radians).
-  #
-  #   --> www.paulbays.com
   p = exp( K * cos( x - mu) - log(2 * pi) * besseliln(0, K));
   return(p)
 }
 
+#' @title my_mode
+#' @description log of base::besselI
+#' @param nu numeric; The order (maybe fractional!) of the corresponding Bessel function.
+#' @param z numeric, ≥ 0.
+#' @author Wanja Mössing
+#' @name besseliln
+#' @export besseliln
 besseliln <- function(nu,z){
   w = log(besselI(z, nu, 1)) + abs(Re(z))
   return(w)
 }
 
-
+# A1inv is included in CircStats
 # A1inv <- function(R) {
 #   if (0 <= R & R < 0.53) {
 #     K = 2 * R + R^3 + (5 * R^5) / 6

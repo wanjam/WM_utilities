@@ -11,3 +11,4 @@ Data/*
 inpoutx64.dll
 io64.mexw64
 *.pyc
+.Rproj.user

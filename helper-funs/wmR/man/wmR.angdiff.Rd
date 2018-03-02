@@ -2,7 +2,7 @@
 % Please edit documentation in R/wmR.angdiff.R
 \name{wmR.angdiff}
 \alias{wmR.angdiff}
-\title{Take two angles in degree and calculates their difference}
+\title{Take two angles in degree and calculate their difference}
 \usage{
 wmR.angdiff(deg1, deg2)
 }
@@ -14,7 +14,7 @@ wmR.angdiff(deg1, deg2)
 \value{
 a single floating point number representing the difference between the two angles.
   Can take on negative values, as it show the orientation of deg1 IN RELATION to deg2.
-  So a result of -1 means, that deg1 is 1° less than deg2.
+  So a result of -1 means, that deg1 is 1 less than deg2.
 }
 \description{
 \code{wmR.angdiff} returns the difference between deg1 and deg2
@@ -29,4 +29,7 @@ diff = wmR.angdiff(5, 10)
 diff = wmR.angdiff(5000, Inf)
 }
 
+}
+\author{
+Wanja Mössing
 }
