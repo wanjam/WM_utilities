@@ -18,4 +18,4 @@ for i in range(0, len(flac_files)):
         warn('File ' + outfile + ' already exists. Skipping...')
     else:
         id3tags = mediainfo(flac_files[i]).get('TAG', {})
-        cur_flac.export(outfile, format = 'mp3', tags = id3tags, bitrate = '128k')
+        cur_flac.export(outfile, format = 'mp3', tags = id3tags, bitrate = '192k')
