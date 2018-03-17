@@ -1,0 +1,3 @@
+%userprofile%\AppData\Local\Continuum\anaconda3\Scripts\activate & activate psychopy & python %userprofile%\AppData\Local\Continuum\anaconda3\envs\psychopy\Scripts\psychopyApp.py
+:: Somehow the location varies...
+::%userprofile%\AppData\Local\Continuum\anaconda3\Scripts\activate & activate psychopy & python %userprofile%\Anaconda3\envs\psychopy\Scripts\psychopyApp.py
