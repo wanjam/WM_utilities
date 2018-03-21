@@ -12,15 +12,15 @@ function [ powz ] = tf_transform(type, pow, baseline, fdim, tdim, cdim, sdim)
 %   (i.e., single trial baseline).
 %
 %   baseline: This function is time agnostic. So baseline should be given
-%   in indeces.
+%   in indeces. Can be 'minmax' to us the whole time as baseline.
 %
-%   type can be one of: 'z', 'dB', 'div' or 'percent'
+%   type can be one of: 'z', 'dB', 'div' or 'percent', 'sub'
 %
 % Wanja Moessing, moessing@wwu.de, Nov 2017
 
 disp(['Converting data to ', type]);
 
-% check input arguments |
+% check input arguments
 if nargin < 7
     sdim = 4;
 end
@@ -37,6 +37,11 @@ end
 % make sure data is in double precision
 if ~isa(pow, 'double')
     pow = double(pow);
+end
+
+% check baseline
+if strcmp('minmax', baseline)
+    baseline = [1, size(pow, tdim)];
 end
 
 % depending on the number of dimensions, loop over subjects/channels or not
@@ -59,6 +64,8 @@ switch ndims(pow)
             case 'div'
                 powz = ...
                     pow ./ repmat(bl_pow, 1, size(pow, 2));
+            case 'sub'
+                powz = pow - bl_pow;
             case 'none'
                 powz = pow;
         end
@@ -86,6 +93,8 @@ switch ndims(pow)
                 case 'div'
                     powz(:,:,i) = ...
                         pow(:,:,i) ./ repmat(bl_pow, 1, size(pow, 2));
+                case 'sub'
+                    powz(:,:,i) = pow(:,:,i) - bl_pow;
                 case 'none'
                     powz(:,:,i) = pow(:,:,i);
             end
@@ -116,6 +125,8 @@ switch ndims(pow)
                     case 'div'
                         powz(:,:,ichan,isub) = ...
                             pow(:,:,ichan,isub) ./ repmat(bl_pow, 1, size(pow, 2));
+                    case 'sub'
+                        powz(:,:,ichan,isub) = pow(:,:,ichan,isub) - bl_pow;
                     case 'none'
                         powz(:,:,ichan,isub) = pow(:,:,ichan,isub);
                 end
