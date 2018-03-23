@@ -65,7 +65,7 @@ switch ndims(pow)
                 powz = ...
                     pow ./ repmat(bl_pow, 1, size(pow, 2));
             case 'sub'
-                powz = pow - bl_pow;
+                powz = pow - repmat(bl_pow, 1, size(pow, 2));
             case 'none'
                 powz = pow;
         end
@@ -94,7 +94,7 @@ switch ndims(pow)
                     powz(:,:,i) = ...
                         pow(:,:,i) ./ repmat(bl_pow, 1, size(pow, 2));
                 case 'sub'
-                    powz(:,:,i) = pow(:,:,i) - bl_pow;
+                    powz(:,:,i) = pow(:,:,i) - repmat(bl_pow, 1, size(pow, 2));
                 case 'none'
                     powz(:,:,i) = pow(:,:,i);
             end
@@ -126,7 +126,8 @@ switch ndims(pow)
                         powz(:,:,ichan,isub) = ...
                             pow(:,:,ichan,isub) ./ repmat(bl_pow, 1, size(pow, 2));
                     case 'sub'
-                        powz(:,:,ichan,isub) = pow(:,:,ichan,isub) - bl_pow;
+                        powz(:,:,ichan,isub) = pow(:,:,ichan,isub) - ...
+                            repmat(bl_pow, 1, size(pow, 2));
                     case 'none'
                         powz(:,:,ichan,isub) = pow(:,:,ichan,isub);
                 end
