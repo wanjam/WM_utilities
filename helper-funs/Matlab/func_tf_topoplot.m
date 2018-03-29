@@ -75,10 +75,11 @@ if isstruct(pow)
         [~, a]  = min(abs(pow.freqs - P.freqs(1)));
         [~, b]  = min(abs(pow.freqs - P.freqs(end)));
         P.freqs = a:b;
+        % get topofreqs for title
+        topofreqs = [pow.freqs(P.freqs(1)), pow.freqs(P.freqs(end))];
+    else
+        topofreqs = [pow.freqs(1), pow.freqs(end)];
     end
-    
-    % get topofreqs for title
-    topofreqs = [pow.freqs(P.freqs(1)), pow.freqs(P.freqs(end))];
 
     % calculate average
     powURsize = size(pow.pow);
