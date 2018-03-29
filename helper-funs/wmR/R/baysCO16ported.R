@@ -65,7 +65,7 @@ CO16_fit <- function(X, TT = NULL, NT=NULL) {
   if (is.null(TT)) { TT = zeros(n, 1)}
 
   if  (is.null(TT) || size(X, 2) > 1 || size(TT, 2) > 1 ||
-       size(X, 1) != size(TT, 1) || is.null(NT) && (size(NT, 1) != size(X, 1) ||
+       size(X, 1) != size(TT, 1) || !is.null(NT) && (size(NT, 1) != size(X, 1) ||
                                                     size(NT, 1) != size(TT, 1))) {
     stop('Input is not correctly dimensioned.\n',
          'Did you use row instead of column vectors?\n',
@@ -118,10 +118,17 @@ CO16_fit <- function(X, TT = NULL, NT=NULL) {
 #' @export CO16_function
 CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
   # --> www.paulbays.com | R-port github.com/wanjam
+
+  if (isempty(NT)){NT <- NULL}
+
   if  (is.null(TT) || size(X, 2) > 1 || size(TT, 2) > 1 ||
-       size(X, 1) != size(TT, 1) || is.null(NT) && (size(NT, 1) != size(X, 1) ||
+       size(X, 1) != size(TT, 1) || !is.null(NT) && (size(NT, 1) != size(X, 1) ||
                                                     size(NT, 1) != size(TT, 1))) {
     stop('Input is not correctly dimensioned')
+  }
+
+  if (is.null(NT)){
+    stop('This port does currently not work without non-targets.')
   }
 
   if (is.null(B_start) &&
