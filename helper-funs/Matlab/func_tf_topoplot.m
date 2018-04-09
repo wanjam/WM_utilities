@@ -26,8 +26,12 @@ function [h, c] = func_tf_topoplot(pow, varargin)
 %           subs = If pow is EEG-struct, which subjects to average
 %                  over? (default = all)
 %           conv = 'conv' of topoplot.m
-%           topofreqs = if pow is NOT an EEG-struct. What is the frequency
+%           freqs = if pow is NOT an EEG-struct. What is the frequency
 %                       range shown (default [-Inf, Inf])
+%           pmask = mask as derived by cluster test. auto-permutes if
+%                   dimensionorder differs from power
+%           maskmode = if pmask os present, should non-significant chans be
+%                      left out (default) or marked ('marked')?
 %
 % Wanja Moessing, moessing@wwu.de, Nov 2017
 
@@ -41,6 +45,7 @@ p.addOptional('topolim', 'minmax', @(x) (isnumeric(x) && length(x)==2)...
 p.addOptional('markchans', NaN, @isvector);
 p.addOptional('smoothness', 150, @isnumeric);
 p.addOptional('ConditionName','',@isstr);
+p.addOptional('maskmode','default',@isstr);
 p.addOptional('cmap','jet', @isstr);
 p.addOptional('unit','unknown unit', @isstr);
 p.addOptional('tlim',':', @(x) isnumeric(x) && length(x) == 2);
@@ -50,7 +55,7 @@ p.addOptional('conv','on', @isstr);
 p.addOptional('topofreqs',[-Inf, Inf], @(x) isnumeric(x) && length(x) == 2);
 p.addOptional('pmask', [], @(x) islogical(x) || isempty(x));
 p.addOptional('electrodes', 'on', @isstr);
-parse(p,pow,varargin{:})
+parse(p, pow, varargin{:})
 
 %% act upon variable input
 % chanlocs
@@ -62,6 +67,15 @@ end
 
 % One-liner
 P = p.Results;
+
+% sanity checks
+if ~isstruct(pow) && ~all(strcmp(':', {P.tlim, P.freqs, P.subs}))
+    warning(['Data is not a structure but ''tlim'', ''freqs'', or ''subs''',...
+        ' is provided. Data input in matrix format is supposed to be one',...
+        ' value per channel. Use a structure or summarize before using',...
+        ' this function.'])
+end
+
 
 % get average in case pow is an EEG struct 
 if isstruct(pow)
@@ -97,8 +111,14 @@ if isstruct(pow)
             c = find(powURsize(3) == size(P.pmask));
             P.pmask = permute(P.pmask, [a, b, c]);
         end
+        % Whenever any time- or frequency point in to-be-plotted range is
+        % significant, plot it.
         pmask = squeeze(any(any(...
             P.pmask(P.freqs, P.tlim, :, P.subs), 2), 1));
+        if strcmp(P.maskmode, 'mark')
+            P.markchans = unique([P.markchans, find(pmask)']);
+            pmask = true(size(pmask));
+        end
     else
         pmask = P.pmask;
     end
