@@ -92,7 +92,7 @@ def EyelinkCalibrate(targetloc=(1920, 1080),
     el     :
         Eyelink object, optional
     """
-    el.doTrackerSetup(targetloc[0],targetloc[1])
+    el.doTrackerSetup(targetloc[0], targetloc[1])
     return
 
 
@@ -110,9 +110,9 @@ def EyelinkDriftCheck(targetloc=(1920, 1080),
     el       :
         Eyelink object, optional
     """
-        # drift check
+    # drift check
     try:
-        res = el.doDriftCorrect(targetloc[0],targetloc[1],1,1)
+        res = el.doDriftCorrect(targetloc[0], targetloc[1], 1, 1)
     except:
         res = el.doTrackerSetup()
     return res
@@ -178,7 +178,8 @@ def EyelinkStart(dispsize, Name, win, bits=32, dummy=False,
     FilePreamble += currentdir + "\'"
     el.sendCommand(FilePreamble)
     print('. ')
-    # this function calls the custom calibration routine "EyeLinkCoreGraphicsPsychopy.py"
+    # this function calls the custom calibration routine
+    # "EyeLinkCoreGraphicsPsychopy.py"
     genv = EyeLinkCoreGraphicsPsychoPy(el, win)
     pylink.openGraphicsEx(genv)
     print('. ')
@@ -471,7 +472,7 @@ def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
         ...as returned by, e.g., EyelinkStart()
     """
     # if it's not a list convert
-    if not isinstance(infolist,list):
+    if not isinstance(infolist, list):
         infolist = [infolist]
     # prepend identifier if necessary
     if infolist[0] is not '>':
@@ -481,27 +482,3 @@ def EyelinkSendTabMsg(infolist, el=pylink.getEYELINK()):
     # send to Eyetracker
     el.sendMessage(msg)
     return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
