@@ -1,6 +1,8 @@
 function [ a, b, c ] = my_angdiff( deg1,deg2 )
 %MY_ANGDIFF takes two angles in degree and outputs their difference
 %
+%  [ a, b, c ] = my_angdiff( deg1,deg2 )
+%
 % deg1 & deg2 can be two real numbers or same-sized vectors.
 % Output 'a' is a vector with the absolute difference between two degrees.
 % 'b' shows whether deg2 was counterclockwise (-1) or clockwise (1) rotated
