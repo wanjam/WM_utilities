@@ -1,0 +1,59 @@
+---
+title: "Psychopy pixel coordinate converter"
+author: "Wanja Mössing, moessing@wwu.de"
+date: "May 9th 2018"
+output: html_document
+runtime: shiny
+---
+
+Standard coordinates are 0,0 top left and max,max bottom right. Psycchopy uses
+0,0 at centre and max,max top right. This tool converts pixel indeces from
+standard to psychopy.
+
+## Input
+
+```{r, echo=FALSE}
+inputPanel(
+  numericInput("x", "standard x coordinate", 0),
+  numericInput("y", "standard y coordinate", 0),
+  numericInput("ymax", "maximum y coordinate", 768),
+  numericInput("xmax", "maximum x coordinate", 1024)
+)
+```
+
+## Result
+```{r, echo=FALSE}
+renderText({
+  xhalf = input$xmax/2
+  yhalf = input$ymax/2
+  if(input$x >= xhalf){
+    xout = input$x - xhalf
+  } else {
+    xout = (xhalf - input$x) *-1
+  }
+  if(input$y >= yhalf){
+    yout = (input$y - yhalf)*-1
+  } else {
+    yout = (yhalf - input$y)
+  }
+  print(paste0('X: ', xout, '   Y:', yout))
+})
+
+renderPlot({
+  xhalf = input$xmax/2
+  yhalf = input$ymax/2
+  if(input$x >= xhalf){
+    xout = input$x - xhalf
+  } else {
+    xout = (xhalf - input$x) *-1
+  }
+  if(input$y >= yhalf){
+    yout = (input$y - yhalf)*-1
+  } else {
+    yout = (yhalf - input$y)
+  }  
+  plot(xout, yout, xlim = c(-xhalf, xhalf), ylim = c(-yhalf, yhalf),
+       main = "Psychopy coordinates", ylab = 'Y', xlab = 'X')
+})
+```
+

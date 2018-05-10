@@ -1,0 +1,65 @@
+---
+title: "trial-structure plot"
+author: "Wanja Mössing"
+date: "12. Dezember 2015"
+output: html_document
+---
+
+This is a dummy Markdown document used to produce trial-structure plots. Using HTML ensures that figure ratios aren't messed up and enables easier export in multiple file-formats.
+
+```{r trialstructure, fig.align='centering',fig.width=10, dev.args=list(bg='transparent',family='serif'), fig.cap="no cap"}
+#plot the transparent background
+plot(c(0,178),c(60,100),t='n',axes=F,ann=F)
+#loop over each screen
+for (rectI in 1:6){ #change to N screens
+  #change plotting coordinates in each iteration, so commands lateron can use the same variables for plotting
+  if (rectI == 1){
+    xleft = 0; ybot = 90; xright = 20; ytop = 100
+    back1=xleft;back2=ybot
+  } else {
+    xleft = xleft + 18
+    ybot = ybot -2
+    xright = xright+18
+    ytop = ytop - 2
+  }
+  #plot the gray box for the current screen
+  rect(xleft,ybot,xright,ytop,col='gray',border='white')
+  #Now, there are several if statements for the different iterations (=screens). Just adjust them to whatever needed.
+  if (rectI %in% c(3)){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2),labels='&&&&&&',col='white')
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='250ms')  }
+  if (rectI ==1){
+    points(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2),t='p',col='white',bg='white',pch=3)
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='250ms')
+  }
+  if (rectI%in%c(2)){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2),labels='Garten',col='white')
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='1750ms')
+  }
+  if (rectI==8){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='250ms')
+  }
+  if (rectI %in% c(4,7)){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='2000ms')
+  }
+    if (rectI %in% c(5)){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2),labels='&&&&&&',col='white')
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='old or new?')  }
+    if (rectI %in% c(6)){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2),labels='1--3--5',col='white')
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='wie sicher?')  }
+  if (rectI == 9){
+    rect(xleft+3,ybot+6,xright-3,ytop-6,col='gray',border='white')
+    x0 <- xleft+((xright-xleft)/2)
+    y0 <- ybot+((ytop-ybot)/2)
+    points(seq(x0-4,x0+4,2),rep(y0,5),t='p',col=c('white','green','white','white','white'),bg='white',pch=16)
+  }
+  if (rectI==10){
+    text(xleft+((xright-xleft)/2),ybot+((ytop-ybot)/2)-7,labels='1.5-2s')
+  }
+  
+}
+#Plot an arrow underneath the screens
+arrows(back1,back2-5,xright,ybot-7,lwd=2)
+```
+

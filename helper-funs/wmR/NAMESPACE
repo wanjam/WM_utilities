@@ -2,6 +2,7 @@
 
 export(CO16_fit)
 export(CO16_function)
+export(Coord2PsyPy)
 export(besseliln)
 export(my_downsample)
 export(my_mode)

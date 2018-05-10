@@ -1,0 +1,34 @@
+---
+title: "Regression to the mean"
+author: "Wanja Mössing"
+date: "19. November 2015"
+output: html_document
+runtime: shiny
+---
+
+This Shiny app visualizes how regression to the mean affects sample sizes in a Study.
+
+Imagine, a researcher wants to find out at what age Psychology students typically graduate from their BSc. As this topic is in hot debate, she is just one of **100** researchers conducting the same study. For some magical reason, they agree on a common number of participants. That means, for instance, all studies use 1 or all studies use 100 subjects. In the plot below, each dot refers to the outcome of one of these 100 studies. Move the bar to change N, the number of subjects per study, to see the effect this has on the results.
+
+## Inputs and Outputs
+
+```{r, echo=FALSE}
+inputPanel(
+  numericInput("MeanAge", "Mean age at BSc graduation", 23),
+  numericInput("SDAge", "Standard Deviation of Age at BSc graduation", 5),
+  sliderInput("Nobs", label = "Number of Observations:",
+              min = 1, max = 200, value = 1, step = 1)
+)
+
+renderPlot({
+  dat <- c()
+  for (i in 1:100){
+    dat[i]<- mean(rnorm(n = input$Nobs,input$MeanAge,sd=input$SDAge))
+  }
+  plot(c(0,100),c(input$MeanAge-input$SDAge*3,input$MeanAge+input$SDAge*3),t='n',axes = F,xlab=paste('Means of 100 studies with',input$Nobs,'participants'),ylab='Age at BSc graduation')
+  axis(1);axis(2);  abline(h=input$MeanAge)
+
+  
+  lines(dat,t='b',col='blue')
+})
+```
