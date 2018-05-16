@@ -89,7 +89,7 @@ end
 %name can only include alpha+digit+underscore------- -
 if length(Name(1:strfind(Name,'.edf')-1))>8 || ~isempty(Name(regexp(Name(1:strfind(Name,'.edf')-1),'\W')))
     fprintf(2,'Eyelink EDF File does not match the requested format.\n Only [0-9], [A-z] and [_] are allowed.\n');
-    CloseAndCleanup
+    CloseAndCleanup;
 end
 
 P.el=EyelinkInitDefaults(window);
@@ -98,7 +98,7 @@ P.el=EyelinkInitDefaults(window);
 if ~EyelinkInit(P.trackr.dummymode)
     fprintf('Eyelink Init aborted.\n');
     fprintf('Try to restart the Eyelink host PC.\n');
-    cleanup;  % cleanup function
+    CloseAndCleanup;  % cleanup function
     return;
 end
 [~,P.trackr.ETversion] = Eyelink('GetTrackerVersion'); %Store EL-Software version
