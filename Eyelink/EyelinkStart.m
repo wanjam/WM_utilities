@@ -55,6 +55,10 @@ elseif isempty('inputDialog')
     inputDialog = 0;
 end
 
+if ~isfield(P, 'CalibLocations')
+    P.CalibLocations = [];
+end
+
 if ~exist('FilePreamble','var')
     [~, currentFolder, ~] = fileparts(pwd);
     FilePreamble = ['''Eyetracking Dataset AE Busch WWU Muenster Experiment: ',currentFolder,''''];
