@@ -38,6 +38,24 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 # https://www.sr-support.com/forum/eyelink/programming/5548-a-psychopy-implementation-of-the-eyelink-coregraphics
 
 
+def notify(message='( ^_^)/ XX-XX ＼(^_^ )', el=pylink.getEYELINK()):
+    """ Prints a message on Eyelink host-pc's interface
+    **Author** : Wanja Mössing, WWU Münster | moessing@wwu.de \n
+    *June 2018*
+
+    Parameters:
+    ----------
+    message : string
+    message to be shown
+    el     :
+        Eyelink object, optional
+    """
+    msg = "record_status_message \'"
+    msg += message
+    msg += "\'"
+    el.sendCommand(msg)
+
+
 def AvoidWrongTriggers():
     """ Throws an error if Eyelink is connected but not configured.\n
     *Only needed in EEG experiments without Eyetracking!*
@@ -92,8 +110,20 @@ def EyelinkCalibrate(targetloc=(1920, 1080),
     el     :
         Eyelink object, optional
     """
+    el.sendMessage("STOP_REC_4_RECAL")
+    # wait 100ms to catch final events
+    pylink.msecDelay(100)
+    # stop the recording
+    el.stopRecording()
+    # do the calibration
     el.doTrackerSetup(targetloc[0], targetloc[1])
-    return
+    # clear tracker display and draw box at center
+    el.sendCommand("clear_screen 0")
+    el.sendCommand("set_idle_mode")
+    pylink.msecDelay(50)
+    # re-start recording
+    el.startRecording(1, 1, 1, 1)
+    return el
 
 
 def EyelinkDriftCheck(targetloc=(1920, 1080),
@@ -112,9 +142,20 @@ def EyelinkDriftCheck(targetloc=(1920, 1080),
     """
     # drift check
     try:
+        el.sendMessage("STOP_REC_4_DRIFTCHECK")
+        # wait 100ms to catch final events
+        pylink.msecDelay(100)
+        # stop the recording
+        el.stopRecording()
         res = el.doDriftCorrect(targetloc[0], targetloc[1], 1, 1)
+        # clear tracker display and draw box at center
+        el.sendCommand("clear_screen 0")
+        el.sendCommand("set_idle_mode")
+        pylink.msecDelay(50)
+        # re-start recording
+        el.startRecording(1, 1, 1, 1)
     except:
-        res = el.doTrackerSetup()
+        res = EyelinkCalibrate(targetloc, el)
     return res
 
 
@@ -238,13 +279,11 @@ def EyelinkStart(dispsize, Name, win, bits=32, dummy=False,
     # run initial calibration
     # 13-Pt Grid calibration
     el.sendCommand('calibration_type = HV13')
-    EyelinkCalibrate(dispsize, el)
-    print('. ')
+    el.doTrackerSetup(dispsize[0], dispsize[1])
     # put tracker in idle mode and wait 50ms, then really start it.
     el.sendMessage('SETUP_FINISHED')
     el.setOfflineMode()
     pylink.msecDelay(500)
-    print('. ')
     # set to realtime mode
     pylink.beginRealTimeMode(200)
     # start recording
@@ -301,7 +340,7 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
     if '.edf' not in Name.lower():
             Name += '.edf'
     # stop realtime mode
-    pylink.endRealTimeMode(0)
+    pylink.endRealTimeMode()
     # make sure all experimental procedures finished
     pylink.msecDelay(1000)
     # stop the recording
@@ -327,7 +366,7 @@ def EyelinkStop(Name, el=pylink.getEYELINK()):
 
 
 def EyelinkGetGaze(targetLoc, FixLen, dispsize, el=pylink.getEYELINK(),
-                   isET=True, PixPerDeg=[], IgnoreBlinks=False,
+                   isET=True, PixPerDeg=None, IgnoreBlinks=False,
                    OversamplingBehavior=None):
     """ Online gaze position output and gaze control for Eyelink 1000+.
 
@@ -430,7 +469,19 @@ def EyelinkGetGaze(targetLoc, FixLen, dispsize, el=pylink.getEYELINK(),
                     hsmvd = True
             else:
                 # Eyelink thinks (0,0) = topleft, PsyPy thinks it's center...
-                gaze = (gaze[0]-dispsize[0]/2, dispsize[1]/2-gaze[1])
+                xhalf = dispsize[0]/2
+                yhalf = dispsize[1]/2
+                x = gaze[0]
+                y = gaze[1]
+                if x >= xhalf:
+                    xout = x - xhalf
+                else:
+                    xout = (xhalf - x) * -1
+                if y >= yhalf:
+                    yout = (y - yhalf) * -1
+                else:
+                    yout = yhalf - y
+                gaze = (xout, yout)
                 # transform location data to numpy arrays, so we can calculate
                 # euclidean distance
                 a = np_array(targetLoc)
@@ -439,10 +490,10 @@ def EyelinkGetGaze(targetLoc, FixLen, dispsize, el=pylink.getEYELINK(),
                 dist = np_sqrt(np_sum((a-b)**2))
                 # check if we know how many px form one degree.
                 # If we do, convert to degree
-                if PixPerDeg != []:
+                if PixPerDeg is not None:
                     dist = dist/PixPerDeg
                 # Now check whether gaze is in allowed frame
-                hsmvd = dist >= FixLen
+                hsmvd = dist > FixLen
 
             # return dict
             return {'x': gaze[0], 'y': gaze[1], 'hsmvd': hsmvd,
