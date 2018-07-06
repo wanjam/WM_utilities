@@ -17,6 +17,8 @@ your Psychtoolbox script.
 Place EyelinkWrapper.py and EyeLinkCoreGraphicsPsychoPy.py in your working directory.
 import the EyelinkWrapper module at the top of your Psychopy script.
 
+This the EyelinkWrapper module requires SR's **pylink** module which is included in their **Eyelink Developers Kit**. Download the kit from their support forum and install it. The installation should place pylink modules somewhere on your computer (`C:\Users\Public\Documents\EyeLink\SampleExperiments\Python` on Windows). Simply copy the folder appropriate for your distribution of Python (most likely `pylink27-amd64`) to `python install path>\Lib\site-packages`. I use Anaconda with an environment called **psychopy**. So my destination looks like this: `C:\Users\moessing.IVV5NET\AppData\Local\Continuum\anaconda3\envs\psychopy\Lib\site-packages`. Finally, rename the copied folder to **pylink**. Note that there's a pip-installable package called *pylink*, which seems like the easier way to install it. It's not. Actually that package is completely unrelated.
+
 Note: EyeLinkCoreGraphicsPsychoPy is developed, maintained and copyrighted by SR-Research and distributed under GPL. It is included here with SR-Research's permission. For the most recent version check their support forum.
 
 ---
