@@ -32,6 +32,9 @@ function [h, c] = func_tf_topoplot(pow, varargin)
 %                   dimensionorder differs from power
 %           maskmode = if pmask os present, should non-significant chans be
 %                      left out (default) or marked ('marked')?
+%           aggregate = function handle. How to aggregate data? Default is
+%                       @mean. Anything that works like @mean can be used
+%                       
 %
 % Wanja Moessing, moessing@wwu.de, Nov 2017
 
@@ -55,6 +58,7 @@ p.addOptional('conv','on', @isstr);
 p.addOptional('topofreqs',[-Inf, Inf], @(x) isnumeric(x) && length(x) == 2);
 p.addOptional('pmask', [], @(x) islogical(x) || isempty(x));
 p.addOptional('electrodes', 'on', @isstr);
+p.addOptional('aggregate', @mean, @(x) isa(x, 'function_handle'));
 parse(p, pow, varargin{:})
 
 %% act upon variable input
@@ -67,6 +71,7 @@ end
 
 % One-liner
 P = p.Results;
+aggfun = @P.aggregate;
 
 % sanity checks
 if ~isstruct(pow) && ~all(strcmp(':', {P.tlim, P.freqs, P.subs}))
@@ -97,7 +102,7 @@ if isstruct(pow)
 
     % calculate average
     powURsize = size(pow.pow);
-    pow = squeeze(mean(mean(mean(...
+    pow = squeeze(aggfun(aggfun(aggfun(...
         pow.pow(P.freqs, P.tlim, :, P.subs), 4), 2), 1));
     
     % check for pmask
