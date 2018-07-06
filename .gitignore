@@ -13,5 +13,8 @@ inpoutx64.dll
 io64.mexw64
 *.pyc
 .Rproj.user
-
+I1.mexw64
+i1d3SDK64.dll
+i1Pro64.*
+i1Pro.dll
 *.m~
