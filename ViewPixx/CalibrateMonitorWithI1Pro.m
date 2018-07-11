@@ -11,6 +11,16 @@ function [ output_args ] = CalibrateMonitorWithI1Pro(ScreenPointer)
 %      i1d3SDK64.dll and lib in: C:\Windows\SysWOW64
 %      Copy both files to your folder.
 %
+%   Currently this function only takes care of luminance. That is, it
+%   treats the monitor as monochromatic at RGB[.5,.5.,5] and finds the
+%   luminance per proton-intensity 0-255.
+%
+%   Check this 2002 article if you want to know more about how calibration
+%   works:
+%   Brainard, D. H., Pelli, D. G. and Robson, T. (2002). Display 
+%    Characterization. In Encyclopedia of Imaging Science and Technology,
+%    J. P. Hornak (Ed.). doi:10.1002/0471443395.img011
+%
 %
 %
 %  Copyright (C) 2018 Wanja Mössing
@@ -45,6 +55,7 @@ else
 end
 disp('Finished calibration.')
 
+
 % -------------------------------------------------------------------------
 % 2. Setup Psychtoolbox
 % -------------------------------------------------------------------------
@@ -60,11 +71,15 @@ wPtr = Screen(ScreenPointer, 'OpenWindow', [.5, .5, .5]);
 
 info = Screen('GetWindowInfo', wPtr);
 sca;
+
+
 % -------------------------------------------------------------------------
 % 3. Setup of the procedure
 % -------------------------------------------------------------------------
-% Sample at these intensities. Must be in 0:255 and must contain 0 & 255.
-CAL.Intensities = 0:5:255;
+% Sample at these (phosphor-)intensities. 
+% Must be in 0:255 and must contain 0 & 255.
+% Recommendation is to sample at ~83 values
+CAL.Intensities = 0:3:255;
 assert(all(ismember([0 ,255], CAL.Intensities)));
 
 % pre allocate space for gamma samples
@@ -89,9 +104,15 @@ Screen('Flip', wPtr);
 RestrictKeysForKbCheck(KbName('SPACE'));
 KbWait;
 
+
 % -------------------------------------------------------------------------
 % 5. Loop over each of the Gamma intensities and take measurements
 % -------------------------------------------------------------------------
+% i1('GetTriStimulus') provides three values:
+% L, the luminance in cd/m2,
+% x, the CIE 1931 x-chromaticity
+% y, the CIE 1931 y-chromaticity 
+
 for irow = length(CAL.Intensities)
     Screen('FillRect', wPtr, CAL.Intensities(irow));
     Screen('Flip', wPtr);
@@ -103,6 +124,7 @@ end
 CAL.Luminance = CAL.TriStimDat(:,1);
 CAL.normLumi = (CAL.Luminance - min(CAL.Luminance))./range(CAL.Luminance);
 save(['i1proOriginalLumi_' datestr(now,30)], 'Cal');
+
 
 % -------------------------------------------------------------------------
 % 6. Find the best fitting function for the measurements
@@ -123,8 +145,5 @@ outputx = [0:255]';
     % expand inverse gamma to full 3-channel CLUT %
     inverseCLUT = repmat(invertedInput,1,3);
     inverseCLUT = inverseCLUT./max(inverseCLUT(:));
-    
     save(['inverse_CLUT' datestr(now,30)], 'inverseCLUT');
-
 end
-
