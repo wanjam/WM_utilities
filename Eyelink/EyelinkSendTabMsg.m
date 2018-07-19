@@ -9,7 +9,8 @@ function [message] = EyelinkSendTabMsg(varargin)
 % with the Eyetrack and can later simply be parsed along with the
 % eyetracking data in R (i.e., by checking all the messages and
 % tab-splitting those that start with '>'). Note that each element must
-% only contain one datum.
+% only contain one datum. Exceptions are 1xN cells of strings and 1xN
+% numeric vectors. Those are simply splitted via tabs.
 %
 % Examples:
 %   EyelinkSendTabMsg(1, 'ConditionA', 'RespCorrect', 99, 7.036748);
@@ -57,9 +58,32 @@ else
     eyelinkconnected = 1;
 end
 
+
+%% test if one of the numeric varargins contains more than one number
+lengths = cell2mat(cellfun(@(x) isnumeric(x) && length(x) > 1, varargin,...
+    'UniformOutput', false));
+if any(lengths)
+    for icell = find(lengths)
+        varargin{icell} = arrayfun(@num2str, varargin{icell},...
+            'UniformOutput', false);
+    end
+end
+
+
+%% test if one of the varargins is cell
+classes = cellfun(@class, varargin,'UniformOutput',0);
+if any(strcmp(classes, 'cell'))
+    for icell = find(strcmp(classes, 'cell'))
+        varargin{icell} = strjoin(...
+            cellfun(@num2str, varargin{icell}, 'UniformOutput', false), {'\t'});
+    end
+end
+
+
 %% concatenate message
 message = strcat('>', strjoin(...
     cellfun(@num2str, varargin, 'UniformOutput', false), {'\t'}));
+
 
 %% send message
 if eyelinkconnected
