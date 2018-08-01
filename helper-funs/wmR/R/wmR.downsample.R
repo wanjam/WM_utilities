@@ -99,6 +99,7 @@ my_downsample <- function(pddt, by, Hz = 100) {
 #' @author Wanja Mössing
 #' @export my_mode
 my_mode <- function(vect){
-  res = sort(vect, decreasing = T)[1]
+  #res = sort(vect, decreasing = T)[1]
+  res = which.max(tabulate(vect))
   return(res)
 }
