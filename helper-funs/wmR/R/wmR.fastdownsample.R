@@ -1,4 +1,4 @@
-# wmR::my_downsample downsamples pupil dilation data to a given frequency
+# wmR::fast_downsample downsamples pupil dilation data to a given frequency
 #     Copyright (C) 2018  Hedderik van Rijn, Jacolien van Rij, (modifications) Wanja Mössing
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,6 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+##' Fast version of wmR::my_downsample. This version attemps to do the same
+##' (see below). However, it's *much faster*. Needs a column 'Trial', which can
+##' simply be **1** if it should be ignored.
+##'
+##' my_downsample documentation:
+##'
 ##' Downsample pupil dilation data to a given frequency
 ##'
 ##' This is a slightly modified version of pR::downsample (see github.com/hedderik/pR).
@@ -60,11 +66,11 @@
 ##' }
 ##'
 ##' @author Hedderik van Rijn, Jacolien van Rij, (modifications) Wanja Mössing
-##' @name my_downsample
-##' @export my_downsample
+##' @name fast_downsample
+##' @export fast_downsample
 ##' @import data.table
 ##' @importFrom stats median
-my_downsample <- function(pddt, by, Hz = 100) {
+fast_downsample <- function(pddt, by, Hz = 100) {
   sampleTime <- pddt[, Time[2] - Time[1]]
   binSize <- 1000 / Hz
   if (binSize %% sampleTime != 0) {
@@ -79,27 +85,19 @@ my_downsample <- function(pddt, by, Hz = 100) {
   ## that we just defined.
 
   ## This is the part that differs from pR::downsample. This version can deal with all the other information captured online by the eyetracker.
-  pddt <- pddt[, .(Dil = median(Dil), X = median(X), Y = median(Y),
-                   ttl = my_mode(TTL), IthSaccadePerSubject = my_mode(IthSaccadeThisSubject),
-                   Blink = my_mode(Blink), Fixation = my_mode(Fixation),
-                   Saccade = my_mode(Saccade), AverageVelocity = my_mode(AverageVelocity),
-                   PeakVelocity = my_mode(PeakVelocity)),
-               by = allF]
+  if (!any(colnames(pddt)=='Trial')) {
+    stop(paste0('This fast version requires a column called \'Trial\'.',
+                '\nIf you don\'t have trials, simply run pddt[,Trial:=1].',
+                '\nIf you do have trials, run pddt[,Trial=YourTrialColumnName]'))
+  }
+  subsamples <- pddt[,.(TTL, IthSaccadeThisSubject, Blink, Fixation, Saccade,
+                        AverageVelocity, PeakVelocity, Trial, DS)]
+  Nsubsamples <- subsamples[,.SD[.N],by = .(Trial, DS)]
+  pddt <- pddt[, .(Dil = median(Dil), X = median(X), Y = median(Y)), by = allF]
+  pddt <- merge(pddt, Nsubsamples, by = c('DS','Trial'))
 
   ## Recreate a Time column with time in ms, and remove the column on which the split the data.
   pddt$Time <- pddt$DS * binSize
   pddt$DS <- NULL
   return(pddt)
-}
-
-
-#' @title my_mode
-#' @description only for internal use in my_downsample
-#' @param vect vector of data
-#' @author Wanja Mössing
-#' @export my_mode
-my_mode <- function(vect){
-  #res = sort(vect, decreasing = T)[1]
-  res = which.max(tabulate(vect))
-  return(res)
 }
