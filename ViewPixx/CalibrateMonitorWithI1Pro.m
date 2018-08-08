@@ -1,14 +1,16 @@
-function [ output_args ] = CalibrateMonitorWithI1Pro(ScreenPointer)
+function [ inverseCLUT ] = CalibrateMonitorWithI1Pro(ScreenPointer)
 %CALIBRATEMONITORWITHI1PRO creates a CLUT for the current monitor
 %   Requires i1d3SDK64.dll, i1.mexw64, and Psychtoolbox
 %   1. To install Psychtoolbox, ask google.
-%   2. To get the low-level interfacing with the i1 to work, download 
-%      http://www.vpixx.com/developer/setup_xrite.exe. 
+%   2. To get the low-level interfacing with the i1 to work, download
+%      http://www.vpixx.com/developer/setup_xrite.exe.
 %      On Windows (did not test other systems), this places the mex and dll
 %      files in the following folders:
 %      I1.mexw64: C:\Program Files\VPixx Technologies\Software Tools\
 %                 i1ProToolbox_trunk\mexdev\build\matlab\win64
-%      i1d3SDK64.dll and lib in: C:\Windows\SysWOW64
+%      i1d3SDK64.dll in: C:\Windows\SysWOW64
+%      i1Pro64.dll in:  C:\Program Files\VPixx Technologies\
+%                       Software Tools\libi1Pro\x64
 %      Copy both files to your folder.
 %
 %   Currently this function only takes care of luminance. That is, it
@@ -17,7 +19,7 @@ function [ output_args ] = CalibrateMonitorWithI1Pro(ScreenPointer)
 %
 %   Check this 2002 article if you want to know more about how calibration
 %   works:
-%   Brainard, D. H., Pelli, D. G. and Robson, T. (2002). Display 
+%   Brainard, D. H., Pelli, D. G. and Robson, T. (2002). Display
 %    Characterization. In Encyclopedia of Imaging Science and Technology,
 %    J. P. Hornak (Ed.). doi:10.1002/0471443395.img011
 %
@@ -43,7 +45,7 @@ function [ output_args ] = CalibrateMonitorWithI1Pro(ScreenPointer)
 % -------------------------------------------------------------------------
 if I1('IsConnected')
     fprintf(['i1 detected!\nPlease place the photometer on the white',...
-        'calibration tile and turn off light.',...
+        ' calibration tile and turn off light.',...
         '\nPress i1-button to calibrate!\n']);
     while ~I1('KeyPressed')
         % wait for keypress
@@ -67,39 +69,40 @@ end
 monitor = Screen('Resolution', ScreenPointer);
 center = [monitor.width, monitor.height] ./ 2;
 
-wPtr = Screen(ScreenPointer, 'OpenWindow', [.5, .5, .5]);
-
-info = Screen('GetWindowInfo', wPtr);
-sca;
+wPtr = Screen(ScreenPointer, 'OpenWindow', 128);
+HideCursor;
 
 
 % -------------------------------------------------------------------------
 % 3. Setup of the procedure
 % -------------------------------------------------------------------------
-% Sample at these (phosphor-)intensities. 
+% Sample at these (phosphor-)intensities.
 % Must be in 0:255 and must contain 0 & 255.
-% Recommendation is to sample at ~83 values
-CAL.Intensities = 0:3:255;
-assert(all(ismember([0 ,255], CAL.Intensities)));
+% Recommendation is to sample at ~83 values (i.e., :3:)
+
+CAL.Intensities = 0:51:255;%17%15%3
+assert(all(ismember([0, 255], CAL.Intensities)));
 
 % pre allocate space for gamma samples
-TriStimDat  = zeros(length(CAL.Intensities), 3);
-SpectralDat = zeros(length(CAL.Intensities), 36);
+CAL.TriStimDat  = zeros(length(CAL.Intensities), 3);
+CAL.SpectralDat = zeros(length(CAL.Intensities), 36);
 
 % generate initial linear gamma CLUT
 linearCLUT = repmat(linspace(0, 1, 256)', 1, 3);
 
 % save the original CLUT and apply the linear CLUT
 preCLUT = Screen('LoadNormalizedGammaTable', wPtr, linearCLUT);
+save(['PreviousCLUT' datestr(now, 29)], 'preCLUT');
 
 
 % -------------------------------------------------------------------------
 % 4. Draw a target point and ask for the i1 to be placed on it
 % -------------------------------------------------------------------------
+Screen('FillRect', wPtr, 128);
 instr = ['Please use the heavy strap to place to I1''s lense on\n'...
-         'the target point (screen center)\nPress Space to start.'];
-DrawFormattedText(wPtr, instr, 'center', centerY * 1.5);
-Screen('DrawDots', wPtr, center, 200);
+    'the target point (screen center)\nPress Space to start.'];
+DrawFormattedText(wPtr, instr, 'center', center(2) * 1.5);
+Screen('DrawDots', wPtr, center, 50, 0, [], 1);
 Screen('Flip', wPtr);
 RestrictKeysForKbCheck(KbName('SPACE'));
 KbWait;
@@ -111,19 +114,42 @@ KbWait;
 % i1('GetTriStimulus') provides three values:
 % L, the luminance in cd/m2,
 % x, the CIE 1931 x-chromaticity
-% y, the CIE 1931 y-chromaticity 
+% y, the CIE 1931 y-chromaticity
 
-for irow = length(CAL.Intensities)
+for irow = 1:length(CAL.Intensities)
+    fprintf('Measurement %i/%i\n', irow, length(CAL.Intensities))
     Screen('FillRect', wPtr, CAL.Intensities(irow));
     Screen('Flip', wPtr);
-    I1('TriggerMeasurement');
+    failcount = 0;
+    while true
+        try
+            % for some reason, this measurement fails every now and then.
+            % It's not a normal error, so try catch alone doesn't do.
+            % We need to reopen the PTB window as well.
+            % This appears to be an error in the mex file. So nothing we
+            % can do about it. It shouldn't mess with our measurements,
+            % anyways.
+            I1('TriggerMeasurement');
+            break
+        catch
+            disp('Measurement failed. Trying again...')
+            failcount = failcount + 1;
+            if failcount > 5
+                break
+            end
+            wPtr = Screen(ScreenPointer, 'OpenWindow', 128);
+            Screen('LoadNormalizedGammaTable', wPtr, linearCLUT);
+            HideCursor;
+        end
+    end
     CAL.TriStimDat(irow, :)  = I1('GetTriStimulus');
     CAL.SpectralDat(irow, :) = I1('GetSpectrum');
 end
 
 CAL.Luminance = CAL.TriStimDat(:,1);
-CAL.normLumi = (CAL.Luminance - min(CAL.Luminance))./range(CAL.Luminance);
-save(['i1proOriginalLumi_' datestr(now,30)], 'Cal');
+CAL.normLumi = (CAL.Luminance - min(CAL.Luminance)) ./...
+    range(CAL.Luminance);
+
 
 
 % -------------------------------------------------------------------------
@@ -136,14 +162,125 @@ save(['i1proOriginalLumi_' datestr(now,30)], 'Cal');
 % fitType == 5:  Modified polynomial
 % fitType == 6:  Linear interpolation
 % fitType == 7:  Cubic spline
-fitType = 7;
-outputx = [0:255]';
-[fit, x, comment] = FitGamma(Cal.indexvalues,Cal.normLumi,outputx,fitType);
-    
-    % invert gamma table
-    invertedInput = InvertGammaTable(outputx,extendedFit,256);
-    % expand inverse gamma to full 3-channel CLUT %
-    inverseCLUT = repmat(invertedInput,1,3);
-    inverseCLUT = inverseCLUT./max(inverseCLUT(:));
-    save(['inverse_CLUT' datestr(now,30)], 'inverseCLUT');
+
+RMSE = zeros(1, 7);
+[fit, msg] = deal(cell(1, 7));
+outlen  = (0:255)';
+for fitType = 1:7
+    try
+        [fit{fitType}, ~, msg{fitType}] = ...
+            FitGamma(CAL.Intensities', CAL.normLumi, outlen, fitType);
+        tmpstr = strsplit(msg,'RMSE: ');
+        RMSE(fitType) = str2double(tmpstr{2});
+    catch ME
+        disp(ME.message)
+    end
+end
+
+% Which fit has the smallest root mean square error? That is, which of the
+% functions above, fits our measured gamma increase best?
+[~, bestfitindex] = min(RMSE);
+dispmsg = sprintf(['%s seems to be the best option.\n',...
+    'I''ll create a CLUT based on that function, load it,\n',...
+    'and take another round of measurements, to validate that we get\n',...
+    'a linearly increasing gamma table, once this CLUT is loaded.\n',...
+    '\nLeave the i1 at the dot and press Space to proceed...'],...
+    msg{bestfitindex});
+DrawFormattedText(wPtr, dispmsg, 'center', center(2) * 1.5);
+Screen('DrawDots', wPtr, center, 50, 0, [], 1);
+Screen('Flip', wPtr);
+RestrictKeysForKbCheck(KbName('SPACE'));
+KbWait;
+
+
+% The best fitting function created a gamma table that perfectly fit's our
+% non-linear initial input. By inverting it, we should get linearity!
+inverseFit = InvertGammaTable(outlen, fit{bestfitindex}, 256);
+
+% Because we're ignoring color for now, we'll just apply our values to all
+% three RGB columns.
+inverseCLUT = repmat(inverseFit, 1, 3);
+
+% convert to normalized RGB values
+inverseCLUT = inverseCLUT./max(inverseCLUT(:));
+
+% save the inverse CLUT
+save(['inverse_CLUT_' datestr(now,29)], 'inverseCLUT');
+
+
+% -------------------------------------------------------------------------
+% 7. Take validation measurements
+% -------------------------------------------------------------------------
+Screen('LoadNormalizedGammaTable', wPtr, inverseCLUT);
+for irow = 1:length(CAL.Intensities)
+    fprintf('Measurement %i/%i\n', irow, length(CAL.Intensities))
+    Screen('FillRect', wPtr, CAL.Intensities(irow));
+    Screen('Flip', wPtr);
+    failcount = 0;
+    while true
+        try
+            I1('TriggerMeasurement');
+            break
+        catch
+            disp('Measurement failed. Trying again...')
+            failcount = failcount + 1;
+            if failcount > 5
+                break
+            end
+            wPtr = Screen(ScreenPointer, 'OpenWindow', 128);
+            Screen('LoadNormalizedGammaTable', wPtr, inverseCLUT)
+            HideCursor;
+        end
+    end
+    CAL.inv.TriStimDat(irow, :)  = I1('GetTriStimulus');
+    CAL.inv.SpectralDat(irow, :) = I1('GetSpectrum');
+end
+
+CAL.inv.Luminance = CAL.inv.TriStimDat(:,1);
+CAL.inv.normLumi = (CAL.inv.Luminance - min(CAL.inv.Luminance)) ./...
+    range(CAL.inv.Luminance);
+save(['i1proMeasurements', datestr(now, 29)], 'CAL');
+sca;
+ShowCursor;
+
+
+% -------------------------------------------------------------------------
+% 8. Plot results and store as pdf
+% -------------------------------------------------------------------------
+
+% initial values and best fitting function
+figure;
+plot(CAL.Intensities, CAL.normLumi, '*', 'Color', 'red'); % samples
+line(outlen, inverseCLUT(:,1), 'Color', 'blue');  % best fitting function
+xlabel('Intensity (0-255)');
+ylabel('Normalized Luminance (0-1)');
+title('First run samples and function fit');
+axis('square');
+annotation('textbox', [.2, .8, .4, .1], 'String', msg{bestfitindex},...
+    'FitBoxToText', 1);
+
+plot(outputx,invertedInput,'r-'); hold on;
+axis([0 indexValues(end) 0 indexValues(end)]);
+plot([0 indexValues(end)],[0 indexValues(end)],'b');
+xlabel('Pixel Values', 'FontWeight', 'bold');
+ylabel('Target Pixel Values', 'FontWeight', 'bold');
+title({'Linear vs. Inverse Gamma Correction'}, 'FontWeight', 'bold');
+axis('square');
+hold off;
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot sampled luminance values for linear CLUT ramp %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subplot(313);
+plot(Calcorr.indexvalues,Calcorr.normLumi,'o-');
+hold on;
+xlabel('Pixel Values', 'FontWeight', 'bold');
+ylabel('Brightness (Unit?)', 'FontWeight', 'bold');
+strTitle{1}='Sample Luminance Function';
+strTitle{2}='Calibrated display';
+title(strTitle, 'FontWeight', 'bold');
+axis([0 256 0 max(Calcorr.normLumi)]);
+axis('square');
+hold off;
 end
