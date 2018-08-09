@@ -1,5 +1,6 @@
 function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
-    Tmax, loc, maxDegDeviation, eyelinkconnected, pixperdeg, dorecal)
+    Tmax, loc, maxDegDeviation, eyelinkconnected, pixperdeg, dorecal,...
+    IgnoreBlinks)
 %EYELINKCONTROLFIXATION controls that a subject looks at the desired
 %location.
 %
@@ -20,6 +21,9 @@ function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
 %   pixperdeg         = how many pixels form one degree?
 %   dorecal           = if true (default), see Tmax. If false, didrecal is 
 %                       still 1, but no recalibration ist started. 
+%   IgnoreBlinks      = Default is false. If true, will keep counting until
+%                       Tmin, as if subject would keep fixating, even when
+%                       subject blinks.
 %
 %
 % OUTPUT:
@@ -48,6 +52,10 @@ function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
 
 if nargin < 8
     dorecal = true;
+end
+
+if nargin < 9
+    IgnoreBlinks = false;
 end
 
 % wait for fixation
@@ -81,8 +89,11 @@ if eyelinkconnected
         FixationOnset = GetSecs;
         hsmvd = 0;
         while ~hsmvd
-            [~,~,hsmvd] = EyelinkGetGaze(P, 0, [], loc,...
+            [x,y,hsmvd] = EyelinkGetGaze(P, 0, [], loc,...
                 maxDegDeviation, eyelinkconnected, pixperdeg);
+            if hsmvd && IgnoreBlinks && x==Inf && y==inf
+                hsmvd = 0;
+            end
             if GetSecs >= (FixationOnset + Tmin - 0.050)
                 break;
             end
