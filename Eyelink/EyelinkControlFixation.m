@@ -1,5 +1,5 @@
 function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
-    Tmax, loc, maxDegDeviation, eyelinkconnected, pixperdeg)
+    Tmax, loc, maxDegDeviation, eyelinkconnected, pixperdeg, dorecal)
 %EYELINKCONTROLFIXATION controls that a subject looks at the desired
 %location.
 %
@@ -18,6 +18,8 @@ function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
 %   eyelinkconnected  = if it's not connected (0), function does nothing
 %                       and simply returns current time.
 %   pixperdeg         = how many pixels form one degree?
+%   dorecal           = if true (default), see Tmax. If false, didrecal is 
+%                       still 1, but no recalibration ist started. 
 %
 %
 % OUTPUT:
@@ -42,6 +44,11 @@ function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+% set defaults
+
+if nargin < 8
+    dorecal = true;
+end
 
 % wait for fixation
 didrecal = 0;
@@ -58,8 +65,10 @@ if eyelinkconnected
                 % subject and run a recalibration. After that, we return to
                 % caller and inform the caller that we had to run a recal.
                 Beeper(400,20,0.1);
-                EyelinkRecalibration(P);
-                Eyelink('Message', 'SYNCTIME');
+                if dorecal
+                    EyelinkRecalibration(P);
+                    Eyelink('Message', 'SYNCTIME');
+                end
                 didrecal = 1;
                 return;
             end

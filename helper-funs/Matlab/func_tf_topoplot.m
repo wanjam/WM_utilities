@@ -1,5 +1,5 @@
 function [h, c] = func_tf_topoplot(pow, varargin)
-% FUNC_TF_TOPOPLOT creates a topoplot base on Elektro-Pipe TF data
+% FUNC_TF_TOPOPLOT(pow, varargin) creates a topoplot base on Elektro-Pipe TF data
 %
 %
 %
@@ -10,7 +10,7 @@ function [h, c] = func_tf_topoplot(pow, varargin)
 %           note: if it's a EEG-struct, dimensions are assumed to be:
 %                 pow.pow(freq, time, chan, subjects). Subjects are ignored
 %                 if not present.
-%       Semi-optional:
+%       Semi-optional keywords:
 %           chanlocs  = EEG.chanloc; can be ignored, if pow is struct
 %           topolim   = limits for color coding; default: minmax
 %           markchans = highlight channels. Indices or names.
