@@ -14,8 +14,8 @@ end
 
 %if meanSub, average over dim 4
 if meanSub
-    l_data = squeeze(mean(l_data, 4));
-    r_data = squeeze(mean(r_data, 4));
+    l_data = mean(l_data, 4);
+    r_data = mean(r_data, 4);
 end
 
 % some coordinates for chans on the midline have very small, but non-zero

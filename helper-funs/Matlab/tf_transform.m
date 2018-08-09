@@ -1,4 +1,4 @@
-function [ powz ] = tf_transform(type, pow, baseline, fdim, tdim, cdim, sdim)
+function [ powz ] = tf_transform(type, pow, baseline, fdim, tdim, cdim, sdim, bslAsIs, verbosity)
 %TF_TRANSFORM normalizes tf-power to z, dB, div or percent-change
 %   pow needs to be at least 2D (frequencybands & time)
 %   By default, this function assumes that dimensions are in the following
@@ -15,12 +15,18 @@ function [ powz ] = tf_transform(type, pow, baseline, fdim, tdim, cdim, sdim)
 %   in indeces. Can be 'minmax' to us the whole time as baseline.
 %
 %   type can be one of: 'z', 'dB', 'div' or 'percent', 'sub'
+%   if bslAsIs is 1 [default: 0]; the function does assume, that 'baseline'
+%   is not indeces but data. It then simply uses this data.
 %
 % Wanja Moessing, moessing@wwu.de, Nov 2017
 
-disp(['Converting data to ', type]);
-
 % check input arguments
+if nargin < 9
+    verbosity = 1;
+end
+if nargin < 8
+    bslAsIs = 0;
+end
 if nargin < 7
     sdim = 4;
 end
@@ -33,6 +39,11 @@ end
 if nargin < 4
     fdim = 1;
 end
+
+if verbosity
+    disp(['Converting data to ', type]);
+end
+
 
 % make sure data is in double precision
 if ~isa(pow, 'double')
@@ -49,10 +60,19 @@ switch ndims(pow)
     case 2 % 1-channel & 1 subject
         %reorder dimensions for our purpose
         pow = permute(pow, [fdim, tdim]);
-        bl_pow = mean(pow(:, baseline(1):baseline(2)), 2);
+        if bslAsIs
+            baseline = permute(baseline, [fdim, tdim]);
+            bl_pow = mean(baseline, 2);
+        else
+            bl_pow = mean(pow(:, baseline(1):baseline(2)), 2);
+        end
         switch type
             case 'z'
-                bl_powA = pow(:, baseline(1):baseline(2));
+                if bslAsIs
+                    bl_powA = baseline;
+                else
+                    bl_powA = pow(:, baseline(1):baseline(2));
+                end
                 powz = (pow - repmat(bl_pow, 1, size(pow,2))) ./...
                     repmat(std(bl_powA, [], 2), 1, size(pow, 2));
             case 'dB'
@@ -76,11 +96,26 @@ switch ndims(pow)
         else
             pow = permute(pow, [fdim, tdim, cdim]);
         end
+        if bslAsIs
+            if isempty(cdim) %1chan+MultSub
+                baseline = permute(baseline, [fdim, tdim, sdim]);
+            else
+                baseline = permute(baseline, [fdim, tdim, cdim]);
+            end
+        end
         for i = 1:size(pow, 3) %loop over dim 3 (chans OR subjs)
-            bl_pow = mean(pow(:, baseline(1):baseline(2), i), 2);
+            if bslAsIs
+                bl_pow = mean(baseline(:, :, i), 2);
+            else
+                bl_pow = mean(pow(:, baseline(1):baseline(2), i), 2);
+            end
             switch type
                 case 'z'
-                    bl_powA = pow(:, baseline(1):baseline(2), i);
+                    if bslAsIs
+                        bl_powA = baseline(:, :, i);
+                    else
+                        bl_powA = pow(:, baseline(1):baseline(2), i);
+                    end
                     powz(:,:,i) = (pow(:,:,i) - repmat(bl_pow, 1,...
                         size(pow(:,:,i),2))) ./...
                         repmat(std(bl_powA, [], 2), 1, size(pow(:,:,i), 2));
@@ -104,11 +139,21 @@ switch ndims(pow)
         pow = permute(pow, [fdim, tdim, cdim, sdim]);
         for isub = 1:size(pow, 4) %loop over subs
             for ichan = 1:size(pow, 3)% & chans
-                bl_pow = ...
-                    mean(pow(:,baseline(1):baseline(2), ichan, isub), 2);
+                if bslAsIs
+                    bl_pow = ...
+                        mean(baseline(:,:, ichan, isub), 2);
+                else
+                    bl_pow = ...
+                        mean(pow(:,baseline(1):baseline(2), ichan, isub), 2);
+                end
                 switch type
                     case 'z'
-                        bl_powA = pow(:, baseline(1):baseline(2), ichan, isub);
+                        if bslAsIs
+                            bl_powA = baseline(:, :, ichan, isub);
+                        else
+                            bl_powA = pow(:, baseline(1):baseline(2),...
+                                ichan, isub);
+                        end
                         powz(:,:,ichan,isub) = ...
                             (pow(:, :, ichan, isub) - ...
                             repmat(bl_pow, 1, size(pow, 2))) ./...
