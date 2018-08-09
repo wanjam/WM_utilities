@@ -154,3 +154,5 @@ c = colorbar('TickLabelInterpreter', 'none', 'location', 'eastoutside');
 
 set(c.Label, 'String', P.unit, 'fontweight', 'bold', 'fontsize', 12,...
     'interpreter', 'none')
+colormap(c, P.cmap);
+
