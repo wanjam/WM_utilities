@@ -249,7 +249,8 @@ ShowCursor;
 % -------------------------------------------------------------------------
 
 % initial values and best fitting function
-figure;
+h = figure;
+subplot(1, 2, 1);
 plot(CAL.Intensities, CAL.normLumi, '*', 'Color', 'red'); % samples
 line(outlen, inverseCLUT(:,1), 'Color', 'blue');  % best fitting function
 xlabel('Intensity (0-255)');
@@ -259,28 +260,16 @@ axis('square');
 annotation('textbox', [.2, .8, .4, .1], 'String', msg{bestfitindex},...
     'FitBoxToText', 1);
 
-plot(outputx,invertedInput,'r-'); hold on;
-axis([0 indexValues(end) 0 indexValues(end)]);
-plot([0 indexValues(end)],[0 indexValues(end)],'b');
-xlabel('Pixel Values', 'FontWeight', 'bold');
-ylabel('Target Pixel Values', 'FontWeight', 'bold');
-title({'Linear vs. Inverse Gamma Correction'}, 'FontWeight', 'bold');
+% Corrected gamma ramp
+subplot(1, 2, 2);
+plot(CAL.Intensities, CAL.inv.normLumi, '*', 'Color', 'green'); % samples
+xlabel('Intensity (0-255)');
+ylabel('Normalized Luminance (0-1)');
+title('Samples taken with corrected CLUT');
 axis('square');
-hold off;
 
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% plot sampled luminance values for linear CLUT ramp %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subplot(313);
-plot(Calcorr.indexvalues,Calcorr.normLumi,'o-');
-hold on;
-xlabel('Pixel Values', 'FontWeight', 'bold');
-ylabel('Brightness (Unit?)', 'FontWeight', 'bold');
-strTitle{1}='Sample Luminance Function';
-strTitle{2}='Calibrated display';
-title(strTitle, 'FontWeight', 'bold');
-axis([0 256 0 max(Calcorr.normLumi)]);
-axis('square');
-hold off;
+h.PaperOrientation = 'landscape';
+h.PaperType = 'A3';
+print(h, ['i1proMeasurementPlots_', datestr(now, 29)],...
+    '-dpsc','-fillpage');
 end
