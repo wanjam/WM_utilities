@@ -1,4 +1,4 @@
-function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
+function [didrecal, FixationOnset, hsmvd] = EyelinkControlFixation(P, Tmin,...
     Tmax, loc, maxDegDeviation, eyelinkconnected, pixperdeg, dorecal,...
     IgnoreBlinks)
 %EYELINKCONTROLFIXATION controls that a subject looks at the desired
@@ -30,6 +30,7 @@ function [didrecal, FixationOnset] = EyelinkControlFixation(P, Tmin,...
 %   didrecal          = Is 1, in case the subject did not fixate for Tmax
 %                       and we recalibrated.
 %   FixationOnset     = Time, when the subject started fixating at target.
+%                       If no fixation reached --> Inf
 %
 % Wanja Moessing, moessing@wwu.de, July 2018
 
@@ -59,6 +60,8 @@ if nargin < 9
 end
 
 % wait for fixation
+FixationOnset = Inf;
+hsmvd = 0;
 didrecal = 0;
 StartFixationControlTime = GetSecs;
 if eyelinkconnected
