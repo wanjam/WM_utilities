@@ -1,27 +1,44 @@
-function [P,window] = EyelinkStart(P,window,Name,inputDialog,FilePreamble)
+function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
 % EYELINKSTART performs startup routines for the EyeLink 1000 Plus
-% eyetracker. 'P' as input should P.myWidth & P.myHeight (= Screen Resolution),
-% P.BgColor (Background color of the experiment), and P.trackr.dummymode
-% (1=there's no real tracker connected).
-% 'window' refers to the current window pointer
-% 'Name' is the filename to which data are written. Should end with
-% '.edf'. Must be called after first window has been flipped.
-% If inputDialog is 1, you're prompted for a filename, with 'Name' entered
-% as default. Else, Name is simply taken as filename.
 %
-% Can take the optional argument FilePreamble to specify an
-% experiment-specific preamble in the edf-files. Defaults to:
-% '''Eyetracking Dataset AE Busch WWU Muenster <current working directory>'''
+% [P, window] = EYELINKSTART(P, window, Name, inputDialog, FilePreamble)
 %
-% NOTE: FilePreamble always needs to start & end with <'''> (3x)
+% INPUT:
+%   'P': struct with parameters.
+%       'P.myWidth' & 'P.myHeight': Optional, (= Screen Resolution),
+%       'P.BgColor': Background color, default: 0.5
+%       'P.trackr.dummymode': 1=there's no real tracker connected (def.: 0)
+%       'P.CalibLocations': Optional. Specify custom calibration grid.
+%         example:
+%           %x1,y1,[...],x9,y9 ;must be nine x-y pairs
+%           X = P.CenterX;
+%           A = P.PicWidth/2-20;
+%           Y = P.CenterY;
+%           B = P.PicHeight/2-20;
+%           P.CalibLocations = [X-A,Y-B,  X,Y-B,  X+A,Y-B,...
+%                               X-A,Y,    X,Y,    X+A,Y,...
+%                               X-A,Y+B,  X,Y+B,  X+A,Y+B]; 
+%   'window': PTB window pointer
+%   'Name': char. Filename to which data are written. Check eyelink naming
+%           conventions. If inputDialog is 1, you're prompted for a
+%           filename, with 'Name' entered as default. Else, Name is simply
+%           taken as filename.
+%   'FilePreamble': Optional, specify an experiment-specific preamble in 
+%                   the edf-files. Defaults to:'''Eyetracking Dataset AE 
+%                   Busch WWU Muenster <current working directory>'''
+%                   Always needs to start & end with <'''> (3x)
+% 
 %
-% Creates P.el & P.eye_used
+% OUTPUT:
+%   'P.el': Eyelink object. Necessary for interfacing the eyelink.
+%   'P.eye_used': Which eye is being tracked?
 %
 % Wanja Moessing, June 2016
 % WM: added FilePreamble on 26/09/2016
 % WM: added custom calibrationpoints on 08/09/2017
+% WM: add defaults and new documentation (22.08.2018)
 
-%  Copyright (C) 2016 Wanja Mössing
+%  Copyright (C) 2016-2018 Wanja Mössing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
@@ -38,6 +55,23 @@ function [P,window] = EyelinkStart(P,window,Name,inputDialog,FilePreamble)
 
 Screen(window,'BlendFunction',GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+if ~isfield(P, 'myWidth')
+    myres = Screen('Resolution', window);
+    P.myWidth = myres.width;
+end
+
+if ~isfield(P, 'myHeight')
+    myres = Screen('Resolution', window);
+    P.myHeight = myres.height;
+end
+
+if ~isfield(P, 'BgColor')
+    P.BgColor = 0.5;
+end
+
+if ~isfield(P, 'trackr.dummymode')
+    P.trackr.dummymode = 0;
+end
 if isempty(regexp(Name,'.edf', 'once'))
     if length(Name)>8
         error('EDF filename is too long.')

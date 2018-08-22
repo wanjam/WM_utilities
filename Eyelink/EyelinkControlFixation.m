@@ -84,7 +84,7 @@ if eyelinkconnected
                 return;
             end
             % Get current gaze position and check if in boundaries
-            [~, ~, badgaze] = EyelinkGetGaze(P, 0, [], loc,...
+            [~, ~, badgaze] = EyelinkGetGaze(P, 0, 0, loc,...
                 maxDegDeviation, eyelinkconnected, pixperdeg);
         end
         % if in boundaries, start to count time and check if it stays in
@@ -94,7 +94,7 @@ if eyelinkconnected
         while ~hsmvd
             [x,y,hsmvd] = EyelinkGetGaze(P, 0, [], loc,...
                 maxDegDeviation, eyelinkconnected, pixperdeg);
-            if hsmvd && IgnoreBlinks && x==Inf && y==inf
+            if hsmvd & IgnoreBlinks & x==Inf & y==inf
                 hsmvd = 0;
             end
             if GetSecs >= (FixationOnset + Tmin - 0.050)
