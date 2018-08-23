@@ -9,6 +9,10 @@ function [didrecal, FixationOnset, hsmvd] = EyelinkControlFixation(P, Tmin,...
 %
 % INPUT:
 %   P                 = Struct with field P.el created during EyelinkStart
+%   P.trackr.dummymode= Optional 1 or 0 (default). If 1, Mouse location is
+%                       taken as gaze coordinates. To make code work, this
+%                       function always sets the mouse to the proper
+%                       location.
 %   Tmin              = mininum time a subject should look at loc
 %   Tmax              = maximum time after which, in case of no fixation at
 %                       target, a recalibration is started and
@@ -19,9 +23,9 @@ function [didrecal, FixationOnset, hsmvd] = EyelinkControlFixation(P, Tmin,...
 %   eyelinkconnected  = if it's not connected (0), function does nothing
 %                       and simply returns current time.
 %   pixperdeg         = how many pixels form one degree?
-%   dorecal           = if true (default), see Tmax. If false, didrecal is 
-%                       still 1, but no recalibration ist started. 
-%   IgnoreBlinks      = Default is false. If true, will keep counting until
+%   dorecal           = if 1 (default), see Tmax. If 0, didrecal is
+%                       still 1, but no recalibration ist started.
+%   IgnoreBlinks      = Default is 0. If 1, will keep counting until
 %                       Tmin, as if subject would keep fixating, even when
 %                       subject blinks.
 %
@@ -52,11 +56,24 @@ function [didrecal, FixationOnset, hsmvd] = EyelinkControlFixation(P, Tmin,...
 % set defaults
 
 if nargin < 8
-    dorecal = true;
+    dorecal = 1;
 end
 
 if nargin < 9
-    IgnoreBlinks = false;
+    IgnoreBlinks = 0;
+end
+
+if isfield(P, 'trackr')
+    if ~isfield(P.trackr, 'dummymode')
+        P.trackr.dummymode = 0;
+    end
+else
+    P.trackr.dummymode = 0;
+end
+
+if Tmax < 0.001
+    warning(['You specified a very tiny Tmax (%.7f).',...
+        ' That''s likely to fail!'], Tmax);
 end
 
 % wait for fixation
@@ -70,6 +87,9 @@ if eyelinkconnected
         % we start by assuming the subject did not look at desired location
         badgaze = 1;
         while badgaze == 1
+            if P.trackr.dummymode
+                SetMouse(loc(1),loc(2));
+            end
             % as long as gaze is not as desired, keep checking
             if GetSecs - StartFixationControlTime > Tmax
                 % once a maximum is exceeded, we assume tracker lost
@@ -84,21 +104,23 @@ if eyelinkconnected
                 return;
             end
             % Get current gaze position and check if in boundaries
-            [~, ~, badgaze] = EyelinkGetGaze(P, 0, 0, loc,...
+            [tmpx, tmpy, badgaze] = EyelinkGetGaze(P, 0, 0, loc,...
                 maxDegDeviation, eyelinkconnected, pixperdeg);
+            %fprintf('\nx:%.2f y:%.2f badgaze:%i\n', tmpx,tmpy,badgaze);
         end
         % if in boundaries, start to count time and check if it stays in
         % boundaries
         FixationOnset = GetSecs;
         hsmvd = 0;
         while ~hsmvd
-            [x,y,hsmvd] = EyelinkGetGaze(P, 0, [], loc,...
+            [x,y,hsmvd] = EyelinkGetGaze(P, 0, 0, loc,...
                 maxDegDeviation, eyelinkconnected, pixperdeg);
+            %fprintf('\nx:%.2f y:%.2f hsmvd:%i\n', x,y,hsmvd);
             if hsmvd & IgnoreBlinks & x==Inf & y==inf
                 hsmvd = 0;
             end
             if GetSecs >= (FixationOnset + Tmin - 0.050)
-                break;
+                return;
             end
         end
     end
