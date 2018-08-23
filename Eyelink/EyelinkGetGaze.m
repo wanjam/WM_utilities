@@ -1,4 +1,5 @@
-function [mx,my,hsmvd] = EyelinkGetGaze(P, IgnoreBlinks, OverSamplingBehavior, targetXY, FixLenDeg, eyelinkconnected, pixperdeg)
+function [mx,my,hsmvd] = EyelinkGetGaze(P, IgnoreBlinks,...
+    OverSamplingBehavior, targetXY, FixLenDeg, eyelinkconnected, pixperdeg)
 % [mx,my,hsmvd,resp] = EYELINKGETGAZE(P)
 % outputs the current gaze position captured by the eyelink 1000+
 % Note that this function outputs Centercoordinates and hsmvd if no new
