@@ -69,9 +69,15 @@ if ~isfield(P, 'BgColor')
     P.BgColor = 0.5;
 end
 
-if ~isfield(P, 'trackr.dummymode')
+
+if isfield(P, 'trackr')
+    if ~isfield(P.trackr, 'dummymode')
+        P.trackr.dummymode = 0;
+    end
+else
     P.trackr.dummymode = 0;
 end
+
 if isempty(regexp(Name,'.edf', 'once'))
     if length(Name)>8
         error('EDF filename is too long.')
