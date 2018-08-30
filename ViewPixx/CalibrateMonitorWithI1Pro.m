@@ -63,6 +63,9 @@ disp('Finished calibration.')
 % -------------------------------------------------------------------------
 AssertOpenGL;
 KbName('UnifyKeyNames');
+
+%we don't require time precision for this task
+Screen('Preference', 'SkipSyncTests', 1);
 if nargin == 0
     ScreenPointer = max(Screen('Screens'));
 end
@@ -92,7 +95,7 @@ linearCLUT = repmat(linspace(0, 1, 256)', 1, 3);
 
 % save the original CLUT and apply the linear CLUT
 preCLUT = Screen('LoadNormalizedGammaTable', wPtr, linearCLUT);
-save(['PreviousCLUT' datestr(now, 29)], 'preCLUT');
+save(['PreviousCLUT', getenv('COMPUTERNAME'), datestr(now, 29)], 'preCLUT');
 
 
 % -------------------------------------------------------------------------
@@ -205,7 +208,7 @@ inverseCLUT = repmat(inverseFit, 1, 3);
 inverseCLUT = inverseCLUT./max(inverseCLUT(:));
 
 % save the inverse CLUT
-save(['inverse_CLUT_' datestr(now,29)], 'inverseCLUT');
+save(['inverse_CLUT_', getenv('COMPUTERNAME'), datestr(now,29)], 'inverseCLUT');
 
 
 % -------------------------------------------------------------------------
@@ -239,7 +242,7 @@ end
 CAL.inv.Luminance = CAL.inv.TriStimDat(:,1);
 CAL.inv.normLumi = (CAL.inv.Luminance - min(CAL.inv.Luminance)) ./...
     range(CAL.inv.Luminance);
-save(['i1proMeasurements', datestr(now, 29)], 'CAL');
+save(['i1proMeasurements',getenv('COMPUTERNAME'), datestr(now, 29)], 'CAL');
 sca;
 ShowCursor;
 
