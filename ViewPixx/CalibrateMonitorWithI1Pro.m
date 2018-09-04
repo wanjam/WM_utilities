@@ -25,7 +25,7 @@ function [ inverseCLUT ] = CalibrateMonitorWithI1Pro(ScreenPointer)
 %
 %
 %
-%  Copyright (C) 2018 Wanja Mössing
+%  Copyright (C) 2018 Wanja MÃ¶ssing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ HideCursor;
 % Must be in 0:255 and must contain 0 & 255.
 % Recommendation is to sample at ~83 values (i.e., :3:)
 
-CAL.Intensities = 0:51:255;%17%15%3
+CAL.Intensities = 0:3:255;%51%17%15%3
 assert(all(ismember([0, 255], CAL.Intensities)));
 
 % pre allocate space for gamma samples
