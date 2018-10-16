@@ -20,3 +20,6 @@ i1Pro.dll
 *.m~
 
 ViewPixx/i1d3SDK\.dll
+i1proMeasurement*
+inverse_CLUT*
+PreviousCLUT*

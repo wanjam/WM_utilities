@@ -25,7 +25,7 @@ function [ inverseCLUT ] = CalibrateMonitorWithI1Pro(ScreenPointer)
 %
 %
 %
-%  Copyright (C) 2018 Wanja Mössing
+%  Copyright (C) 2018 Wanja MÃ¶ssing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
@@ -63,6 +63,9 @@ disp('Finished calibration.')
 % -------------------------------------------------------------------------
 AssertOpenGL;
 KbName('UnifyKeyNames');
+
+%we don't require time precision for this task
+Screen('Preference', 'SkipSyncTests', 1);
 if nargin == 0
     ScreenPointer = max(Screen('Screens'));
 end
@@ -80,7 +83,7 @@ HideCursor;
 % Must be in 0:255 and must contain 0 & 255.
 % Recommendation is to sample at ~83 values (i.e., :3:)
 
-CAL.Intensities = 0:51:255;%17%15%3
+CAL.Intensities = 0:3:255;%51%17%15%3
 assert(all(ismember([0, 255], CAL.Intensities)));
 
 % pre allocate space for gamma samples
@@ -92,7 +95,7 @@ linearCLUT = repmat(linspace(0, 1, 256)', 1, 3);
 
 % save the original CLUT and apply the linear CLUT
 preCLUT = Screen('LoadNormalizedGammaTable', wPtr, linearCLUT);
-save(['PreviousCLUT' datestr(now, 29)], 'preCLUT');
+save(['PreviousCLUT', getenv('COMPUTERNAME'), datestr(now, 29)], 'preCLUT');
 
 
 % -------------------------------------------------------------------------
@@ -205,7 +208,7 @@ inverseCLUT = repmat(inverseFit, 1, 3);
 inverseCLUT = inverseCLUT./max(inverseCLUT(:));
 
 % save the inverse CLUT
-save(['inverse_CLUT_' datestr(now,29)], 'inverseCLUT');
+save(['inverse_CLUT_', getenv('COMPUTERNAME'), datestr(now,29)], 'inverseCLUT');
 
 
 % -------------------------------------------------------------------------
@@ -239,7 +242,7 @@ end
 CAL.inv.Luminance = CAL.inv.TriStimDat(:,1);
 CAL.inv.normLumi = (CAL.inv.Luminance - min(CAL.inv.Luminance)) ./...
     range(CAL.inv.Luminance);
-save(['i1proMeasurements', datestr(now, 29)], 'CAL');
+save(['i1proMeasurements',getenv('COMPUTERNAME'), datestr(now, 29)], 'CAL');
 sca;
 ShowCursor;
 
