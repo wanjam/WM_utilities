@@ -1,17 +1,18 @@
 function EyelinkRecalibration(P, eyelinkconnected)
+% EYELINKRECALIBRATION(P, eyelinkconnected)
 % performs recalibration of a connected Eyetracker after breaks etc
 %
-% needs P.el with all subfields introduced during the initial calibration
-% called by startEyelink and P.el.capture(1:4), indicating which datatyes
-% to record.
+% Needs P.el with all subfields introduced during the initial calibration
+% called by startEyelink including P.el.capture(1:4), indicating which
+% datatyes to record.
 %
-% eyelinkconnected should be 0 or 1 (default). If 0, the function does
+% 'eyelinkconnected' should be 0 or 1 (default). If 0, the function does
 % nothing.
 %
-% Wanja Moessing 29/02/2016
+% Wanja Moessing 29/02/2016, 05/11/2018
 
 
-%  Copyright (C) 2016 Wanja Mössing
+%  Copyright (C) 2016-2018 Wanja Mössing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
@@ -26,7 +27,7 @@ function EyelinkRecalibration(P, eyelinkconnected)
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-% check if eyelink is not connected
+% check if eyelink is connected
 if nargin < 2
     eyelinkconnected = 1;
 end
@@ -36,22 +37,29 @@ if eyelinkconnected == 0
 end
 
 Eyelink('Message', 'STOP_REC_4_RECAL');
-% adds 100 msec of data to catch final events
+
+% add 100 msec of data to catch final events
 WaitSecs(0.1);
 Eyelink('StopRecording');
 
-% you must call this function to apply the changes from above
+% make sure to use the same settings as during EyelinkStart
 EyelinkUpdateDefaults(P.el);
 
 % Hide the mouse cursor;
 HideCursor;
 
+% Do the actual calibration
 EyelinkDoTrackerSetup(P.el);
+
 % clear tracker display and draw box at center
 Eyelink('Command', 'clear_screen 0')
 Eyelink('Command', 'set_idle_mode');
 WaitSecs(0.05);
+
 % this can optionally take four boolean input values, specifiying
 % the datatypes recorded (file_samples, file_events, link_samples, link_events)
 %Eyelink('StartRecording',P.trackr.capture(1),P.trackr.capture(2),P.trackr.capture(3),P.trackr.capture(4));
+
+% restart recording
 Eyelink('StartRecording');
+end

@@ -1,10 +1,9 @@
 function [] = EyelinkNotify(message, eyelinkconnected)
-% EYELINKNOTIFY(message) displays a message on Eyelink Host PC
-% This doesn't really simplify much but is easy to remember.
+% EYELINKNOTIFY(message, eyelinkconnected) displays a message on Eyelink Host PC
 % Message can be any string you like to be displayed in the bottom right
 % corner of the host pc. This is can be useful, when you want to run in
-% single screen mode and keep track of trials. Keep in mind that the space
-% for characters is limited. Usually you'd want siomething like this:
+% single screen mode and keep track of trials. Keep in mind, that the space
+% for characters is limited. Usually you'd want something like this:
 %  EyelinkNotify(sprintf('Trial %i/%i', itrial, maxnumbertrials))
 %
 % 'eyelinkconnected' can be useful when your experiment has a single

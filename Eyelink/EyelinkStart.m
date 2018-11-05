@@ -1,4 +1,4 @@
-function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
+function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble, eyelinkconnected)
 % EYELINKSTART performs startup routines for the EyeLink 1000 Plus
 %
 % [P, window] = EYELINKSTART(P, window, Name, inputDialog, FilePreamble)
@@ -28,6 +28,7 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
 %                   the edf-files. Defaults to:'''Eyetracking Dataset AE 
 %                   Busch WWU Muenster <current working directory>'''
 %                   Always needs to start & end with <'''> (3x)
+%   'eyelinkconnected': Optional boolean. If present, it overrides P.isET.
 % 
 %
 % OUTPUT:
@@ -54,6 +55,13 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+if exist('eyelinkconnected','var')
+    if eyelinkconnected
+        P.isET = 1;
+    else
+        P.isET = 0;
+    end
+end
 
 if ~isfield(P, 'isET')
     P.isET = 1;
@@ -62,7 +70,7 @@ elseif P.isET == 0
     return
 end
 
-Screen(window,'BlendFunction',GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+Screen(window, 'BlendFunction', GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 if ~isfield(P, 'myWidth')
