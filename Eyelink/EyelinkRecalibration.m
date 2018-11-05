@@ -1,9 +1,12 @@
-function EyelinkRecalibration(P)
+function EyelinkRecalibration(P, eyelinkconnected)
 % performs recalibration of a connected Eyetracker after breaks etc
 %
 % needs P.el with all subfields introduced during the initial calibration
 % called by startEyelink and P.el.capture(1:4), indicating which datatyes
 % to record.
+%
+% eyelinkconnected should be 0 or 1 (default). If 0, the function does
+% nothing.
 %
 % Wanja Moessing 29/02/2016
 
@@ -22,6 +25,15 @@ function EyelinkRecalibration(P)
 %
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+% check if eyelink is not connected
+if nargin < 2
+    eyelinkconnected = 1;
+end
+if eyelinkconnected == 0
+    disp('No Eyelink connected. No connection to close...');
+    return
+end
 
 Eyelink('Message', 'STOP_REC_4_RECAL');
 % adds 100 msec of data to catch final events

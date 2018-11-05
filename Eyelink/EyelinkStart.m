@@ -4,10 +4,11 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
 % [P, window] = EYELINKSTART(P, window, Name, inputDialog, FilePreamble)
 %
 % INPUT:
-%   'P': struct with parameters.
+%   'P': struct with parameters. (all optional. struct can be empty)
 %       'P.myWidth' & 'P.myHeight': Optional, (= Screen Resolution),
 %       'P.BgColor': Background color, default: 0.5
 %       'P.trackr.dummymode': 1=there's no real tracker connected (def.: 0)
+%       'P.isET': 1(default) or 0. If 0, does nothing and returns.
 %       'P.CalibLocations': Optional. Specify custom calibration grid.
 %         example:
 %           %x1,y1,[...],x9,y9 ;must be nine x-y pairs
@@ -17,7 +18,7 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
 %           B = P.PicHeight/2-20;
 %           P.CalibLocations = [X-A,Y-B,  X,Y-B,  X+A,Y-B,...
 %                               X-A,Y,    X,Y,    X+A,Y,...
-%                               X-A,Y+B,  X,Y+B,  X+A,Y+B]; 
+%                               X-A,Y+B,  X,Y+B,  X+A,Y+B];
 %   'window': PTB window pointer
 %   'Name': char. Filename to which data are written. Check eyelink naming
 %           conventions. If inputDialog is 1, you're prompted for a
@@ -53,7 +54,16 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble)
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
+if ~isfield(P, 'isET')
+    P.isET = 1;
+elseif P.isET == 0
+    disp('No Eyelink connected - no connection started.');
+    return
+end
+
 Screen(window,'BlendFunction',GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
 if ~isfield(P, 'myWidth')
     myres = Screen('Resolution', window);

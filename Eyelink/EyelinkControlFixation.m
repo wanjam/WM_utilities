@@ -35,10 +35,12 @@ function [didrecal, FixationOnset, hsmvd] = EyelinkControlFixation(P, Tmin,...
 %                       and we recalibrated.
 %   FixationOnset     = Time, when the subject started fixating at target.
 %                       If no fixation reached --> Inf
+%   hsmvd             = "hasmoved" did the subject move the eyes after the
+%                       initial fixation?
 %
 % Wanja Moessing, moessing@wwu.de, July 2018
 
-%  Copyright (C) 2018 Wanja Mössing
+%  Copyright (C) 2018 Wanja Mï¿½ssing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by

@@ -1,7 +1,10 @@
-function EyelinkStop(P)
+function EyelinkStop(P, eyelinkconnected)
 % EYELINKSTOP performs the usual stopping routines for the Eyelink 1000 plus
 % eyetracker. Needs P.trackr.edfFile, which should have been created with a
 % previous call to EYELINKSTART
+%
+% eyelinkconnected should be 0 or 1 (default). If 0, the function does
+% nothing.
 %
 % Wanja Moessing 28/02/2016
 
@@ -19,6 +22,15 @@ function EyelinkStop(P)
 %
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+% check if eyelink is not connected
+if nargin < 2
+    eyelinkconnected = 1;
+end
+if eyelinkconnected == 0
+    disp('No Eyelink connected. No connection to close...');
+    return
+end
 
 % check for dummy
 if isfield(P, 'trackr')
