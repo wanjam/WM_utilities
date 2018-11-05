@@ -34,7 +34,7 @@ function [message] = EyelinkSendTabMsg(varargin)
 %
 % Wanja Moessing, July 2018, moessing@wwu.de
 
-%  Copyright (C) 2018 Wanja Mössing
+%  Copyright (C) 2018 Wanja Mï¿½ssing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ end
 
 %% concatenate message
 message = strcat('>', strjoin(...
-    cellfun(@num2str, varargin, 'UniformOutput', false), {'\t'}));
+    cellfun(@num2str, varargin, 'UniformOutput', false), '\\t'));
 
 
 %% send message
