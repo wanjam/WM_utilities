@@ -1,23 +1,19 @@
 # Eyelink Wrappers
 
-A collection of functions to make interacting with the Eyelink 1000+ 
-during the experiment more straight-forward.
-All of these functions require the Eyelink C API included in SR-Research's
-developer pack.
+A collection of functions to make interacting with the Eyelink 1000+ during the experiment more straight-forward. All of these functions require the Eyelink C API included in SR-Research's developer pack.
 
 ## Install
 
 ### Matlab functions
 
-Just add the directory to your path and call the .m-functions from within
-your Psychtoolbox script.
+Just add the directory to your path and call the .m-functions from within your Psychtoolbox script.
 
 ### Python functions
 
 Place EyelinkWrapper.py and EyeLinkCoreGraphicsPsychoPy.py in your working directory.
 import the EyelinkWrapper module at the top of your Psychopy script.
 
-This the EyelinkWrapper module requires SR's **pylink** module which is included in their **Eyelink Developers Kit**. Download the kit from their support forum and install it. The installation should place pylink modules somewhere on your computer (`C:\Users\Public\Documents\EyeLink\SampleExperiments\Python` on Windows). Simply copy the folder appropriate for your distribution of Python (most likely `pylink27-amd64`) to `python install path>\Lib\site-packages`. I use Anaconda with an environment called **psychopy**. So my destination looks like this: `C:\Users\moessing.IVV5NET\AppData\Local\Continuum\anaconda3\envs\psychopy\Lib\site-packages`. Finally, rename the copied folder to **pylink**. Note that there's a pip-installable package called *pylink*, which seems like the easier way to install it. It's not. Actually that package is completely unrelated.
+The EyelinkWrapper module requires SR's **pylink** module which is included in their **Eyelink Developers Kit**. Download the kit from their support forum and install it. The installation should place pylink modules somewhere on your computer (`C:\Users\Public\Documents\EyeLink\SampleExperiments\Python` on Windows). Simply copy the folder appropriate for your distribution of Python (most likely `pylink27-amd64`) to `python install path>\Lib\site-packages`. I use Anaconda with an environment called **psychopy**. So my destination looks like this: `C:\Users\moessing.IVV5NET\AppData\Local\Continuum\anaconda3\envs\psychopy\Lib\site-packages`. Finally, rename the copied folder to **pylink**. Note that there's a pip-installable package called *pylink*, which seems like the easier way to install it. It's not. Actually that package is completely unrelated.
 
 Note: EyeLinkCoreGraphicsPsychoPy is developed, maintained and copyrighted by SR-Research and distributed under GPL. It is included here with SR-Research's permission. For the most recent version check their support forum.
 
@@ -28,7 +24,7 @@ Note: EyeLinkCoreGraphicsPsychoPy is developed, maintained and copyrighted by SR
 Note that this is probably quite specific to our lab. Use this in any other lab at your own risk.
 
 ### Matlab
-The Matlab code consists of five simple functions: `EyelinkStart.m, EyelinkStop.m, EyelinkRecalibration.m, EyelinkgGetGaze.m, and EyelinkAvoidWrongTriggers.m`
+The Matlab code consists of six simple functions: `EyelinkStart.m, EyelinkStop.m, EyelinkRecalibration.m, EyelinkgGetGaze.m, EyelinkControlFixation.m, and EyelinkAvoidWrongTriggers.m`
 
 A typical workflow in Psychtoolbox would look like this:
 
@@ -49,7 +45,7 @@ A typical workflow in Psychtoolbox would look like this:
 
 5. Two things can happen:  
     0. (i) you want to control fixation on-line and have your experiment react to what the subject's eyes are doing **and/or** (ii) you want to recalibrate every now and then.
-    1. Gaze control <br> You can simply use `EyelinkGetGaze.m`. Typically, you'd want to control where subjects look at between two screens. To do this, build up a scren and flip it. Now, you'd place a code like the one below between this and the code that builds the subsequent screen.
+    1. Gaze control <br> You can simply use `EyelinkGetGaze.m`. Typically, you'd want to control where subjects look at between two screens. To do this, build up a scren and flip it. Now, you'd place a code like the one below between this and the code that builds the subsequent screen. A more high-leve version, that allows you to specify a maximum time until fixation must start, for how long fixation must be maintained and if you want a recalibration, whenever subjects don't fixate in time is `EyelinkControlFixation`. This is a one-liner, that is sufficient in most situations. Check it's documentation for usage instructions.
        ```matlab
        onset_time = Screen('Flip', wPtr);
        screen_time = 0.500 % time the current screen is supposed to be shown
