@@ -65,21 +65,22 @@
 ##' @import data.table
 ##' @importFrom stats median
 my_downsample <- function(pddt, by, Hz = 100) {
-  sampleTime <- pddt[, Time[2] - Time[1]]
+  pddt.tmp <- copy(pddt)
+  sampleTime <- pddt.tmp[, Time[2] - Time[1]]
   binSize <- 1000 / Hz
   if (binSize %% sampleTime != 0) {
     warning("Sample frequency of data is not a multiple of the target frequency specified in the by argument")
   }
 
   ## Downsample ----
-  pddt[, DS := Time %/% binSize]
+  pddt.tmp[, DS := Time %/% binSize]
   allF <- c(by, "DS")
 
   ## Do our downsampling per group of cells defined by the combination of the by argument *and* the DS variable
   ## that we just defined.
 
   ## This is the part that differs from pR::downsample. This version can deal with all the other information captured online by the eyetracker.
-  pddt <- pddt[, .(Dil = median(Dil), X = median(X), Y = median(Y),
+  pddt.tmp <- pddt.tmp[, .(Dil = median(Dil), X = median(X), Y = median(Y),
                    ttl = my_mode(TTL), IthSaccadePerSubject = my_mode(IthSaccadeThisSubject),
                    Blink = my_mode(Blink), Fixation = my_mode(Fixation),
                    Saccade = my_mode(Saccade), AverageVelocity = my_mode(AverageVelocity),
@@ -87,9 +88,9 @@ my_downsample <- function(pddt, by, Hz = 100) {
                by = allF]
 
   ## Recreate a Time column with time in ms, and remove the column on which the split the data.
-  pddt$Time <- pddt$DS * binSize
-  pddt$DS <- NULL
-  return(pddt)
+  pddt.tmp$Time <- pddt$DS * binSize
+  pddt.tmp$DS <- NULL
+  return(pddt.tmp)
 }
 
 

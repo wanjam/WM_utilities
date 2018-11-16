@@ -54,6 +54,7 @@
 ##' \code{by} parameter also contains the names of the columns containing condition and participant information.
 ##'
 ##' @param Hz target Hz
+##' @param useref boolean (default: FALSE). Can be set TRUE to squeeze the last bit of performance out of it. Only do so if you're absolutely sure you don't mind your original pddt-data.table to be messed with.
 ##'
 ##' @return Returns a downsampled copy of the original \code{data.table} with the following columns:
 ##' \itemize{
@@ -70,34 +71,39 @@
 ##' @export fast_downsample
 ##' @import data.table
 ##' @importFrom stats median
-fast_downsample <- function(pddt, by, Hz = 100) {
-  sampleTime <- pddt[, Time[2] - Time[1]]
+fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE) {
+  if (!useref) {
+  pddt.tmp <- copy(pddt) # avoid overwriting global variable
+  } else {
+    pddt.tmp <- pddt
+  }
+  sampleTime <- pddt.tmp[, Time[2] - Time[1]]
   binSize <- 1000 / Hz
   if (binSize %% sampleTime != 0) {
     warning("Sample frequency of data is not a multiple of the target frequency specified in the by argument")
   }
 
   ## Downsample ----
-  pddt[, DS := Time %/% binSize]
+  pddt.tmp[, DS := Time %/% binSize]
   allF <- c(by, "DS")
 
   ## Do our downsampling per group of cells defined by the combination of the by argument *and* the DS variable
   ## that we just defined.
 
   ## This is the part that differs from pR::downsample. This version can deal with all the other information captured online by the eyetracker.
-  if (!any(colnames(pddt)=='Trial')) {
+  if (!any(colnames(pddt.tmp) == 'Trial')) {
     stop(paste0('This fast version requires a column called \'Trial\'.',
                 '\nIf you don\'t have trials, simply run pddt[,Trial:=1].',
                 '\nIf you do have trials, run pddt[,Trial=YourTrialColumnName]'))
   }
-  subsamples <- pddt[,.(TTL, IthSaccadeThisSubject, Blink, Fixation, Saccade,
+  subsamples <- pddt.tmp[,.(TTL, IthSaccadeThisSubject, Blink, Fixation, Saccade,
                         AverageVelocity, PeakVelocity, Trial, DS)]
   Nsubsamples <- subsamples[,.SD[.N],by = .(Trial, DS)]
-  pddt <- pddt[, .(Dil = median(Dil), X = median(X), Y = median(Y)), by = allF]
-  pddt <- merge(pddt, Nsubsamples, by = c('DS','Trial'))
+  pddt.tmp <- pddt.tmp[, .(Dil = median(Dil), X = median(X), Y = median(Y)), by = allF]
+  pddt.tmp <- merge(pddt.tmp, Nsubsamples, by = c('DS','Trial'))
 
   ## Recreate a Time column with time in ms, and remove the column on which the split the data.
-  pddt$Time <- pddt$DS * binSize
-  pddt$DS <- NULL
-  return(pddt)
+  pddt.tmp$Time <- pddt.tmp$DS * binSize
+  pddt.tmp$DS <- NULL
+  return(pddt.tmp)
 }

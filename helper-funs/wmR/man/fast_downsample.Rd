@@ -6,7 +6,7 @@
 (see below). However, it's *much faster*. Needs a column 'Trial', which can
 simply be **1** if it should be ignored.}
 \usage{
-fast_downsample(pddt, by, Hz = 100)
+fast_downsample(pddt, by, Hz = 100, useref = FALSE)
 }
 \arguments{
 \item{pddt}{a pupil dilation \code{data.table} of a single participant containing at least the following
@@ -24,6 +24,8 @@ only contains the columns listed above and the columns specified in this \code{b
 \code{by} parameter also contains the names of the columns containing condition and participant information.}
 
 \item{Hz}{target Hz}
+
+\item{useref}{boolean (default: FALSE). Can be set TRUE to squeeze the last bit of performance out of it. Only do so if you're absolutely sure you don't mind your original pddt-data.table to be messed with.}
 }
 \value{
 Returns a downsampled copy of the original \code{data.table} with the following columns:
