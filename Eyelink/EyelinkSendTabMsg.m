@@ -15,8 +15,8 @@ function [message] = EyelinkSendTabMsg(varargin)
 % Examples:
 %   EyelinkSendTabMsg(1, 'ConditionA', 'RespCorrect', 99, 7.036748);
 %   EyelinkSendTabMsg('ConditionA', 3);
-%   msg = EyelinkSendTabMsg(1, 'CoA', 'ResC', 99, 'eyelinkisconnected', 1);
-%   msg = EyelinkSendTabMsg(1, 'CoA', 'ResW', 99, 'eyelinkisconnected', 0);
+%   msg = EyelinkSendTabMsg(1, 'CoA', 'ResC', 99, 'eyelinkconnected', 1);
+%   msg = EyelinkSendTabMsg(1, 'CoA', 'ResW', 99, 'eyelinkconnected', 0);
 %
 % Not run:
 %   EyelinkSendTabMsg(1, myTrialMatrix);
