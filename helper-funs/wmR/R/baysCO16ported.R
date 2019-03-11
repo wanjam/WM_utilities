@@ -113,7 +113,7 @@ CO16_fit <- function(X, TT = NULL, NT=NULL) {
 #' @param TT = [n*1,1] column vector of Target orientations
 #' @param NT = [n*1, m] matrix of non-target values
 #' @param B_start starting values
-#' @importFrom pracma size repmat ones zeros
+#' @importFrom pracma size repmat ones zeros isempty
 #' @importFrom CircStats A1inv
 #' @export CO16_function
 CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
