@@ -2,7 +2,7 @@
 % Please edit documentation in R/baysCO16ported.R
 \name{besseliln}
 \alias{besseliln}
-\title{my_mode}
+\title{besseliln}
 \usage{
 besseliln(nu, z)
 }

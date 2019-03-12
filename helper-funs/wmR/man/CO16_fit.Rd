@@ -4,14 +4,18 @@
 \alias{CO16_fit}
 \title{CO16_FIT}
 \usage{
-CO16_fit(X, TT = NULL, NT = NULL)
+CO16_fit(X, TT = NULL, NT = NULL, ...)
 }
 \arguments{
-\item{X}{= [n*1,1] vector of responses}
+\item{X}{[n*1,1] vector of responses **or** data.table containing columns
+with responses, targets and non-targets}
 
-\item{TT}{= [n*1,1] column vector of Target orientations}
+\item{TT}{[n*1,1] column vector of Target orientations}
 
-\item{NT}{= [n*1, m] matrix of non-target values}
+\item{NT}{[n*1, m] matrix of non-target values}
+
+\item{...}{optional input arguments passed to \code{DT2CO16}, in case
+\code{X} is a \code{data.table}.}
 }
 \description{
 This is a ported version of Paul Bays' Matlab code published at http://www.paulbays.com/code/CO16/
@@ -50,6 +54,9 @@ Schneegans S & Bays PM. No fixed item limit in visuospatial working
   Bays PM, Catalao RFG & Husain M. The precision of visual working
   memory is set by allocation of a shared resource. Journal of Vision
   9(10): 7, 1-11 (2009)
+}
+\seealso{
+DT2CO16
 }
 \author{
 Paul Bays, R port by Wanja Moessing

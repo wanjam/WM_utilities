@@ -1,5 +1,5 @@
 # wmR::baysCO16ported is an R port of Paul Bays' CO16 Matlab code.
-# Copyright (C) 2017 Paul Bays, Port 2018 Wanja Mössing
+# Copyright (C) 2017 Paul Bays, Port 2019 Wanja Mössing
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,28 +52,39 @@
 #'   9(10): 7, 1-11 (2009)
 #'
 #' @author Paul Bays, R port by Wanja Moessing
-#' @param X = [n*1,1] vector of responses
-#' @param TT = [n*1,1] column vector of Target orientations
-#' @param NT = [n*1, m] matrix of non-target values
+#' @param X [n*1,1] vector of responses **or** data.table containing columns
+#' with responses, targets and non-targets
+#' @param TT [n*1,1] column vector of Target orientations
+#' @param NT [n*1, m] matrix of non-target values
+#' @param ... optional input arguments passed to \code{DT2CO16}, in case
+#' \code{X} is a \code{data.table}.
+#' @seealso DT2CO16
 #' @name  CO16_fit
 #' @export CO16_fit
 #' @importFrom pracma size repmat ones zeros
 #' @importFrom CircStats A1inv
-CO16_fit <- function(X, TT = NULL, NT=NULL) {
+#' @import data.table
+CO16_fit <- function(X, TT = NULL, NT=NULL, ...) {
+  # allow to input a data.table; at some point, the whole thing should be ported to data.table sytax
+  if (is.data.table(X)) {
+    res = DT2CO16(X, ...)
+    X = res$X
+    TT = res$TT
+    NT = res$NT
+  }
   n = size(X, 1)
-
   if (is.null(TT)) { TT = zeros(n, 1)}
 
   if  (is.null(TT) || size(X, 2) > 1 || size(TT, 2) > 1 ||
-       size(X, 1) != size(TT, 1) || !is.null(NT) && (size(NT, 1) != size(X, 1) ||
-                                                    size(NT, 1) != size(TT, 1))) {
+       size(X, 1) != size(TT, 1) || !is.null(NT) &&
+       (size(NT, 1) != size(X, 1) || size(NT, 1) != size(TT, 1))) {
     stop('Input is not correctly dimensioned.\n',
          'Did you use row instead of column vectors?\n',
          'Try X = matrix(X,length(X),1)')
   }
 
   if (is.null(NT)) {
-    NT = zeros(n, 0)
+    NT = matrix(NaNs(n),n,1)
     nn = 0
   } else {
     nn = size(NT, 2)
@@ -103,7 +114,13 @@ CO16_fit <- function(X, TT = NULL, NT=NULL) {
     }
   }
   #warning('on','JV10_function:MaxIter');
-  return(list(B, LL, W))
+  names(B) = c('K', 'pT', 'pN', 'pU')
+  names(LL) = 'Log-likelihood'
+  W = data.table(W)
+  names(W) = c('wT', 'wN', 'wU')
+  res = list(B, LL, W)
+  names(res) = c('B','LL','W')
+  return(res)
 }
 
 #' @title CO16_function
@@ -123,12 +140,13 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
 
   if  (is.null(TT) || size(X, 2) > 1 || size(TT, 2) > 1 ||
        size(X, 1) != size(TT, 1) || !is.null(NT) && (size(NT, 1) != size(X, 1) ||
-                                                    size(NT, 1) != size(TT, 1))) {
+                                                     size(NT, 1) != size(TT, 1))) {
     stop('Input is not correctly dimensioned')
   }
 
-  if (is.null(NT)){
-    stop('This port does currently not work without non-targets.')
+  # Check if data are in radians
+  if (any(as.logical(lapply(list(X, TT, NT), function(k) any(k > 2*pi))))) {
+    stop('Values in input are larger than 2*pi! Please convert to radians!')
   }
 
   if (is.null(B_start) &&
@@ -141,11 +159,11 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
 
   n = size(X, 1)
 
-  if (is.null(NT)) {
-    NT = rep(0, n)
+  if (is.null(NT) || all(is.na(NT))) {
+    NT = matrix(NaNs(n),n,1)
     nn = 0
   } else {
-    nn = ncol(NT)
+    nn = size(NT, 2)
   }
 
   # Default starting parameters
@@ -163,8 +181,10 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
 
   E  = X - TT
   E = ((E + pi) %% (2 * pi)) - pi
-  NE = repmat(X, 1, nn) - NT
-  NE = ((NE + pi) %% (2 * pi)) - pi
+  if (nn != 0) {
+    NE = repmat(X, 1, nn) - NT
+    NE = ((NE + pi) %% (2 * pi)) - pi
+  }
 
   LL = NaN; dLL = NaN; iter = 0
 
@@ -174,7 +194,7 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
     Wg = Pu * ones(n, 1) / (2 * pi)
 
     if (nn == 0) {
-      Wn = zeros(size(NE))
+      Wn = matrix(zeros(length(NT),1))
     } else {
       Wn = Pn / nn * wmR::vonmisespdf(NE, 0, K)
     }
@@ -195,10 +215,16 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
     Pn = sum(rowSums(Wn) / W) / n
     Pu = sum(Wg / W) / n
 
-    rw = cbind((Wt / W), (Wn / repmat(W, 1, nn)))
+    if (nn == 0) {
+      rw = Wt / W
+      S = sin(E)
+      C = cos(E)
+    }else{
+      rw = cbind((Wt / W), (Wn / repmat(W, 1, nn)))
+      S = cbind(sin(E), sin(NE))
+      C = cbind(cos(E), cos(NE))
+    }
 
-    S = cbind(sin(E), sin(NE))
-    C = cbind(cos(E), cos(NE))
     r = cbind(sum(sum(S * rw)), sum(sum(C * rw)))
 
     if (sum(sum(rw)) == 0) {
@@ -239,20 +265,67 @@ CO16_function <- function(X, TT=NULL, NT=NULL, B_start=NULL) {
 #' @author Wanja Mössing
 #' @export vonmisespdf
 vonmisespdf <- function(x, mu, K) {
-  p = exp( K * cos( x - mu) - log(2 * pi) * besseliln(0, K));
+  p = exp( K * cos( x - mu) - log(2 * pi) - besseliln(0, K));
   return(p)
 }
 
-#' @title my_mode
+#' @title besseliln
 #' @description log of base::besselI
 #' @param nu numeric; The order (maybe fractional!) of the corresponding Bessel function.
 #' @param z numeric, ≥ 0.
 #' @author Wanja Mössing
 #' @name besseliln
 #' @export besseliln
-besseliln <- function(nu,z){
+besseliln <- function(nu, z){
   w = log(besselI(z, nu, 1)) + abs(Re(z))
   return(w)
+}
+
+#' @title DT2C016
+#' @description Currently, the ported CO16 functions require matrices instead of
+#' \code{data.tables} (or \code{data.frames}). This function takes care of
+#' extracting the right columns and converts them to matrices. This function is
+#' called internally in \code{CO16_fit}.
+#' @param DT a \code{data.table} containg one column with X (responses) data,
+#' none or one with TT (target) data, and none or multiple with NT (non-target)
+#' data. Data should be in radians (default) or degree (see \code{type})
+#' @param dt.X pattern that will match the column containing responses. Default
+#' matches columns starting with 'X'
+#' @param dt.TT pattern that will match the column containing targets. Default
+#' matches columns starting with 'TT'
+#' @param dt.NT pattern that will match the column containing distractors. Default
+#' matches columns starting with 'NT'
+#' @param type Are the input data in degree ('deg') or in radian ('rad',
+#' default). If 'deg' is specified, data will be converted to radian.
+#' @author Wanja Mössing
+#' @name DT2CO16
+#' @export DT2CO16
+#' @import data.table
+#' @importFrom pracma deg2rad
+DT2CO16 <- function(DT, dt.X='^X', dt.TT='^TT', dt.NT='^NT', type='rad'){
+  ptrns = c(dt.X, dt.TT, dt.NT)
+  names(ptrns) = c('X','TT','NT')
+  res = sapply(ptrns, function(x) .DT2CO16sub(x, DT),
+               simplify = FALSE, USE.NAMES = TRUE)
+  if (type == 'deg') {
+    return(lapply(res, function(x) if (is.numeric(x)) deg2rad(x)))
+  } else {
+    return(res)
+  }
+}
+
+#' @title .DT2CO16sub
+#' @description internal function of DT2CO16
+#' @author Wanja Mössing
+#' @name .DT2CO16sub
+#' @import data.table
+#' @keywords internal
+.DT2CO16sub = function(ptrn, DT){
+  if (any(names(DT) %like% ptrn)) {
+    return(as.matrix(DT[, .SD, .SDcols = patterns(ptrn)]))
+  } else {
+    return(NULL)
+  }
 }
 
 # A1inv is included in CircStats
@@ -266,3 +339,4 @@ besseliln <- function(nu,z){
 #   }
 #   return(K)
 # }
+
