@@ -36,7 +36,11 @@ else
     end
 end
 
-system([ps2pdf, '" -dEmbedAllFonts=true ', psfile, '"']);
+suff = regexp(psfile, '\.(ps|eps)');
+pdffile = [psfile(1:suff), 'pdf'];
+
+system([ps2pdf, ' -dPDFSETTINGS=/default -sPAPERSIZE=a3 "', psfile,...
+    '" "', pdffile, '"']);
 
 if nargin < 2
     remove_original = 0;
