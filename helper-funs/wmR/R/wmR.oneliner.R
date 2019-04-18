@@ -131,3 +131,29 @@ NAs <- function(n){
 nastr <- function(n){
   return(rep(NA_character_, n))
 }
+
+##' @title  Load multiple libraries with one command
+##' @description loads multiple libraries in one line without massive printing
+##' to console.
+##' @param ... comma-separated library names without or with quotes. Or a
+##' character vector of library names.
+##' @return Nothing. Unloadable packs will throw errors.
+##' @seealso \code{library()}
+##' @examples
+##' wmR::libraries(data.table, lme4, ggplot2)
+##' wmR::libraries('data.table', 'lme4', 'ggplot2')
+##' packs <- c('data.table', 'lme4', 'ggplot2')
+##' wmR::libraries(packs)
+##'
+##' @author Wanja Mössing
+##' @name libraries
+##' @export libraries
+##'
+libraries <- function(...){
+  if (is.vector(...)) {
+    packs <- c(...)
+  } else {
+    packs <- as.character(as.list(substitute(list(...)))[-1L])
+  }
+  invisible(sapply(packs, library, character.only = TRUE))
+}
