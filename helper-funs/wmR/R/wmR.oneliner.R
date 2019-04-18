@@ -150,10 +150,10 @@ nastr <- function(n){
 ##' @export libraries
 ##'
 libraries <- function(...){
-  if (is.vector(...)) {
+  packs <- as.character(as.list(substitute(list(...)))[-1L])
+  # 'packs' will be nonsense if a vector was entered...
+  if (length(packs) == 1 && substr(packs, 1, 2) == 'c(') {
     packs <- c(...)
-  } else {
-    packs <- as.character(as.list(substitute(list(...)))[-1L])
   }
   invisible(sapply(packs, library, character.only = TRUE))
 }
