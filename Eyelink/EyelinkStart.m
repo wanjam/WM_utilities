@@ -97,7 +97,7 @@ else
 end
 
 if isempty(regexp(Name,'.edf', 'once'))
-    if length(Name)>8
+    if length(Name) > 8
         error('EDF filename is too long.')
     else
         Name = strcat(Name,'.edf');

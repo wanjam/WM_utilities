@@ -48,12 +48,12 @@
 ##' for blink samples.
 ##'
 ##' @author Wanja Mössing
-##' @name detectblinks
-##' @export detectblinks
+##' @name blink.detect
+##' @export blink.detect
 ##' @import data.table
-detectblinks <- function(pddt, minDilation = 500, maxDeltaDilation = 5,
-                          TrialCol = 'Trial', SR_Blink_Col = NA,
-                          use_SR = FALSE, verbose = TRUE, expandblinks = 0) {
+blink.detect <- function(pddt, minDilation = 500, maxDeltaDilation = 5,
+                         TrialCol = 'Trial', SR_Blink_Col = NA,
+                         use_SR = FALSE, verbose = TRUE, expandblinks = 0) {
   if (!is.na(SR_Blink_Col) && verbose) {
     online_blinks <- pddt[get(SR_Blink_Col) == 1, .N]
     offline_blinks <- pddt[Dil < minDilation, .N]
@@ -87,5 +87,77 @@ detectblinks <- function(pddt, minDilation = 500, maxDeltaDilation = 5,
     pddt[, FOO := NULL]
     pddt[, BAR := NULL]
   }
+  return(pddt)
+}
+
+
+##' @title Interpolate blinks in Eyetracking data measured with Eyelink 1000+
+##' @description interpolates blinks in pupil dilation data, as detected by
+##' \code{blink.detect}. Currently supports linear and spline interpolation.
+##' Linear interpolation is based on \code{pR::interpolateblinks} by Hedderik
+##' van Rijn (see \code{github.com/hedderik/pR}). The cubic spline interpolation
+##' implements the interpolation part of Mathot, 2013. Note that this function
+##' does not run blink detection as described in that paper.
+##' @param pddt A pupil dilation data.table, containing at least the columns:
+##' \code{Dil} and \code{Trial} for linear interpolation or \code{Dil} for
+##' spline interpolation.
+##' @param type character. Type of interpolation. Can be 'spline' (default) or
+##' 'linear'
+##' @return Returns the same data.table with column \code{Dil} interpolated for
+##' blink periods and an additional column \code{IthBlink} counting blinks per
+##' subject (assuming you're running this on single subjects).
+##'
+##' @author Wanja Mössing
+##' @name blink.interolate
+##' @export blink.interpolate
+##' @import data.table
+##' @import stats
+blink.interpolate <- function (pddt, type = "spline") {
+  if (type == "linear") {
+    .dil.na.approx <- function(Dil) {
+      if (all(is.na(Dil))) {
+        return(Dil)
+      }
+      return(na.approx(Dil, na.rm = FALSE))
+    }
+    pddt[, `:=`(Dil, .dil.na.approx(Dil)), by = Trial]
+  }
+  if (type == "spline") {
+    # algo based on Mathot, 2013 (A simple way to reconstruct pupil size during eye blinks)
+    # define four timepoints
+    pddt <- .blink.onset_offset_marker(pddt)
+    pddt[, ':='(UrDil = Dil, idx = 1:.N)]
+    OnOff <- pddt[BlinkOnOff %in% c(-1, 1), ]
+    foundnewblink = FALSE
+    BlinkCount = 1;
+    for (i in 1:OnOff[,.N]){
+      if (OnOff[i, BlinkOnOff == 1]) {
+        y2 = OnOff[i, idx]
+        if (foundnewblink) {
+          stop('Blink onset found prior to blink offset?')
+        }
+        foundnewblink = TRUE
+      }
+      if (OnOff[i, BlinkOnOff == -1] && foundnewblink) {
+        y3 = OnOff[i, idx]
+        y1 = y2-y3+y2;
+        y4 = y3-y2+y3;
+        foundnewblink = FALSE
+
+        # run spline interpolation
+        interpdat <- pddt[, spline(c(y1,y2,y3,y4), Dil[c(y1,y2,y3,y4)], xout = y2:y3)]
+        pddt[y2:y3, ':='(Dil = interpdat$y, IthBlink = BlinkCount)]
+        interpdat <- NULL
+        BlinkCount = BlinkCount + 1
+      }
+    }
+    set(pddt, j = c('UrDil', 'idx', 'BlinkOnOff'), value = NULL)
+  }
+  return(pddt)
+}
+
+
+.blink.onset_offset_marker <- function(pddt) {
+  pddt[, BlinkOnOff := diff(c(FALSE, is.na(Dil)))]
   return(pddt)
 }

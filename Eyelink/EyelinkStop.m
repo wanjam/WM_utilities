@@ -17,7 +17,7 @@ function EyelinkStop(P, eyelinkconnected, outfolder)
 % Wanja Moessing 28/02/2016
 % Wanja Moessing 07/02/2019: Implement Elio Balestrieri's suggestions
 
-%  Copyright (C) 2016-2019 Wanja Mössing
+%  Copyright (C) 2016-2019 Wanja Mï¿½ssing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by

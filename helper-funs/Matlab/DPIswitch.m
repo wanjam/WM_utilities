@@ -1,9 +1,9 @@
 function DPIswitch(On, factor)
-%DPIswitch turns hiDPI scaling on or off
+%DPIswitch(On, factor) turns hiDPI scaling on or off
 %
 % Linux specific. You need to restart Matlab after running this script
 % On = logical, turn hidpi on(1; default) or off(0)?
-% factor = optional, can be a scaling factor.
+% factor = optional, can be a scaling factor (default 2.5).
 %
 % Wanja Moessing, moessing@wwu.de, Feb 2018
 
