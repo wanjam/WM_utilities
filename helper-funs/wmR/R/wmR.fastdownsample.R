@@ -85,12 +85,14 @@ fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE) {
 
   ## Downsample ----
   pddt.tmp[, DS := Time %/% binSize]
+  setorder(pddt.tmp, Trial, DS, Time)
   allF <- c(by, "DS")
 
-  ## Do our downsampling per group of cells defined by the combination of the by argument *and* the DS variable
-  ## that we just defined.
+  ## Do our downsampling per group of cells defined by the combination of the by
+  ##  argument *and* the DS variable that we just defined.
 
-  ## This is the part that differs from pR::downsample. This version can deal with all the other information captured online by the eyetracker.
+  ## This is the part that differs from pR::downsample. This version can deal
+  ## with all the other information captured online by the eyetracker.
   if (!any(colnames(pddt.tmp) == 'Trial')) {
     stop(paste0('This fast version requires a column called \'Trial\'.',
                 '\nIf you don\'t have trials, simply run pddt[,Trial:=1].',
@@ -98,12 +100,15 @@ fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE) {
   }
   subsamples <- pddt.tmp[,.(TTL, IthSaccadeThisSubject, Blink, Fixation, Saccade,
                         AverageVelocity, PeakVelocity, Trial, DS)]
+  setorder(subsamples, Trial, DS)
   Nsubsamples <- subsamples[,.SD[.N],by = .(Trial, DS)]
+  setorder(Nsubsamples, Trial, DS)
+  downsamplecols <- c('Dil', 'X', 'Y')
   pddt.tmp <- pddt.tmp[, .(Dil = median(Dil), X = median(X), Y = median(Y)), by = allF]
-  pddt.tmp <- merge(pddt.tmp, Nsubsamples, by = c('DS','Trial'))
+  pddt.tmp <- merge(pddt.tmp, Nsubsamples, by = c('Trial','DS'))
 
   ## Recreate a Time column with time in ms, and remove the column on which the split the data.
-  pddt.tmp$Time <- pddt.tmp$DS * binSize
-  pddt.tmp$DS <- NULL
+  pddt.tmp[, Time := DS * binSize]
+  pddt.tmp[, DS := NULL]
   return(pddt.tmp)
 }
