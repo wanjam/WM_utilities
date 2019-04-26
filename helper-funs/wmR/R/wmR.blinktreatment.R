@@ -87,6 +87,7 @@ blink.detect <- function(pddt, minDilation = 500, maxDeltaDilation = 5,
     pddt[, FOO := NULL]
     pddt[, BAR := NULL]
   }
+  cat(sprintf('Proportion of data that is blinks: %.2f\n', pddt[,sum(is.na(Dil))/.N]))
   return(pddt)
 }
 
@@ -113,6 +114,7 @@ blink.detect <- function(pddt, minDilation = 500, maxDeltaDilation = 5,
 ##' @import data.table
 ##' @import stats
 blink.interpolate <- function (pddt, type = "spline") {
+  setorder(pddt, ID, Trial, RelTime)
   if (type == "linear") {
     .dil.na.approx <- function(Dil) {
       if (all(is.na(Dil))) {
@@ -155,7 +157,6 @@ blink.interpolate <- function (pddt, type = "spline") {
   }
   return(pddt)
 }
-
 
 .blink.onset_offset_marker <- function(pddt) {
   pddt[, BlinkOnOff := diff(c(FALSE, is.na(Dil)))]

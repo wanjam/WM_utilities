@@ -5,7 +5,7 @@
 \alias{blink.interpolate}
 \title{Interpolate blinks in Eyetracking data measured with Eyelink 1000+}
 \usage{
-blink.interpolate(pddt, type = "linear")
+blink.interpolate(pddt, type = "spline")
 }
 \arguments{
 \item{pddt}{A pupil dilation data.table, containing at least the columns:
