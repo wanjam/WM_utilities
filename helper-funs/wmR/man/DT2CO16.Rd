@@ -5,7 +5,7 @@
 \title{DT2C016}
 \usage{
 DT2CO16(DT, dt.X = "^X", dt.TT = "^TT", dt.NT = "^NT",
-  type = "rad")
+  dt.Trial = "^Trial", type = "rad")
 }
 \arguments{
 \item{DT}{a \code{data.table} containg one column with X (responses) data,
@@ -20,6 +20,9 @@ matches columns starting with 'TT'}
 
 \item{dt.NT}{pattern that will match the column containing distractors. Default
 matches columns starting with 'NT'}
+
+\item{dt.Trial}{pattern that will match the column containing Trials. Default
+matches columns starting with 'Trial'. Ignored if missing.}
 
 \item{type}{Are the input data in degree ('deg') or in radian ('rad',
 default). If 'deg' is specified, data will be converted to radian.}
