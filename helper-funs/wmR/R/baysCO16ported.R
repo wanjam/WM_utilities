@@ -71,6 +71,7 @@ CO16_fit <- function(X, TT = NULL, NT=NULL, ...) {
     X = res$X
     TT = res$TT
     NT = res$NT
+    urTrial = res$Trial
   }
   n = size(X, 1)
   if (is.null(TT)) { TT = zeros(n, 1)}
@@ -118,6 +119,9 @@ CO16_fit <- function(X, TT = NULL, NT=NULL, ...) {
   names(LL) = 'Log-likelihood'
   W = data.table(W)
   names(W) = c('wT', 'wN', 'wU')
+  if (length(urTrial) == W[, .N]) {
+    W[, Trial := urTrial]
+  }
   res = list(B, LL, W)
   names(res) = c('B','LL','W')
   return(res)
@@ -295,6 +299,8 @@ besseliln <- function(nu, z){
 #' matches columns starting with 'TT'
 #' @param dt.NT pattern that will match the column containing distractors. Default
 #' matches columns starting with 'NT'
+#' @param dt.Trial pattern that will match the column containing Trials. Default
+#' matches columns starting with 'Trial'. Ignored if missing.
 #' @param type Are the input data in degree ('deg') or in radian ('rad',
 #' default). If 'deg' is specified, data will be converted to radian.
 #' @author Wanja Mössing
@@ -302,16 +308,24 @@ besseliln <- function(nu, z){
 #' @export DT2CO16
 #' @import data.table
 #' @importFrom pracma deg2rad
-DT2CO16 <- function(DT, dt.X='^X', dt.TT='^TT', dt.NT='^NT', type='rad'){
-  ptrns = c(dt.X, dt.TT, dt.NT)
-  names(ptrns) = c('X','TT','NT')
+DT2CO16 <- function(DT, dt.X='^X', dt.TT='^TT', dt.NT='^NT', dt.Trial='^Trial',
+                    type='rad'){
+  ptrns = c(dt.X, dt.TT, dt.NT, dt.Trial)
+  names(ptrns) = c('X','TT','NT','Trial')
+  if (type == 'deg') {
+    circcols <- names(DT)
+    circcols <- circcols[circcols %like% paste(ptrns[c('X', 'TT', 'NT')],
+                                               collapse = '|')]
+    DT[, (circcols) := lapply(.SD, deg2rad), .SDcols = circcols]
+  } else {
+    if (any(sapply(res[c('X','TT','NT')], function(k) abs(k) > 2 * pi))) {
+      stop(paste0('Specified data type is radians, but values exceed 2 * pi.',
+                  '\nConsider using type = "deg" instead.'))
+    }
+  }
   res = sapply(ptrns, function(x) .DT2CO16sub(x, DT),
                simplify = FALSE, USE.NAMES = TRUE)
-  if (type == 'deg') {
-    return(lapply(res, function(x) if (is.numeric(x)) deg2rad(x)))
-  } else {
-    return(res)
-  }
+  return(res)
 }
 
 #' @title .DT2CO16sub
