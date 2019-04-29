@@ -157,3 +157,56 @@ libraries <- function(...){
   }
   invisible(sapply(packs, library, character.only = TRUE))
 }
+
+
+##' @title  Debug on error behavior shortcut
+##' @description sets global options to use \code{recover} or not upon non-
+##' catastrophical errors. If used without input, it will work like a switch,
+##' changing whatever the current state is to the opposite.
+##' @param do_pause logical. enable or disable recovering upon errors. NA
+##' (default) checks what the current state is and switches debugging on or off.
+##' @return Nothing.
+##' @seealso \code{options(error)}
+##' @examples
+##' library(wmR)
+##' pause_on_error(TRUE)
+##' sum('THREEPLUSFOUR')
+##' pause_on_error(FALSE)
+##' sum('THREEPLUSFOUR')
+##'
+##' @author Wanja Mössing
+##' @name pause_on_error
+##' @export pause_on_error
+pause_on_error <- function(do_pause = NA) {
+  if (is.na(do_pause)) {
+    # get current status
+    stat = getOption('error')
+    if (is.null(stat)) {
+      options(error = utils::recover)
+      print('Turning recover() upon errors on.')
+    } else if (.fun_overlap(stat, utils::recover) > .8) {
+      options(error = NULL)
+      print('Turning recover() upon errors off.')
+    } else if (!is.null(grep('.rs.breakOnError|.rs.recordTraceback',
+                             deparse(stat)))) {
+      options(error = NULL)
+      warning(paste0('Trying to turn off error handling. You seem to be using',
+                     ' Rstudio.\nSo you might want to use the toolbar-menu ',
+                     '(Debug -> On Error) instead of this function.'))
+    }
+  } else if (do_pause == TRUE) {
+    options(error = utils::recover)
+    print('Turning recover() upon errors on.')
+  } else if (do_pause == FALSE) {
+    options(error = NULL)
+    print('Turning recover() upon errors off.')
+  }
+}
+
+.fun_overlap <- function(fun1, fun2) {
+  A = deparse(fun1)
+  B = deparse(fun2)
+  return(
+    (sum(A %in% B) - sum(!(A %in% B))) / (sum(!(A %in% B)) + sum(A %in% B))
+    )
+}
