@@ -147,9 +147,16 @@ blink.interpolate <- function (pddt, type = "spline") {
         foundnewblink = FALSE
 
         # run spline interpolation
-        interpdat <- pddt[, spline(c(y1,y2,y3,y4), Dil[c(y1,y2,y3,y4)], xout = y2:y3)]
-        pddt[y2:y3, ':='(Dil = interpdat$y, IthBlink = BlinkCount)]
-        interpdat <- NULL
+        # we cannot do a meaningful interpolation, if we start a recording with
+        # a blink. hence, if y1 is negative, skip interpolation but set count.
+        if (y1 <= 0) {
+          pddt[y2:y3, ':='(Dil = NA_real_, IthBlink = BlinkCount)]
+        } else {
+          interpdat <- pddt[, spline(c(y1,y2,y3,y4), Dil[c(y1,y2,y3,y4)],
+                                     xout = y2:y3)]
+          pddt[y2:y3, ':='(Dil = interpdat$y, IthBlink = BlinkCount)]
+          interpdat <- NULL
+        }
         BlinkCount = BlinkCount + 1
       }
     }
