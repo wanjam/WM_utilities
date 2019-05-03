@@ -16,9 +16,9 @@ returns computername; shortcut for \code{Sys.info()['nodename']}
 thispc <- computername()
 print(thispc)
 
-if (computername == 'LinuxServer') {
+if (computername() == 'LinuxServer') {
    rootdir = '/home/wanja/data'
-} elseif (computername == 'Laptop') {
+} else if (computername() == 'Laptop') {
    rootdir = 'C:/Users/Wanja/data'
 }
 

@@ -23,13 +23,14 @@ Returns the result of whatever it is supposed to evaluate
 Does something specific to the host it's running on.
 }
 \examples{
+\donttest{
 rootdir <- pcswitch(c('LinuxServer', 'WinLaptop', 'WinStation'),
                       append = 'User',
                       '/', 'C:/', 'F:/')
 
 rootdir <- pcswitch(c('LinuxServer', 'WinLaptop', 'WinStation'),
                       mean(1:99), 77, 'F:/')
-
+}
 
 }
 \author{

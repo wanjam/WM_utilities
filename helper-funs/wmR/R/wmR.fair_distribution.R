@@ -31,7 +31,6 @@
 ##' @import data.table
 ##'
 fair_distribution <- function(DT){
-  require(data.table)
   # DT should be a data.table with each column representing 1 group and each row showing their choices in descending order (integers)
   # sanity checks
   if(nrow(DT) < ncol(DT)){

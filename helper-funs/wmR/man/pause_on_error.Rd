@@ -21,9 +21,9 @@ changing whatever the current state is to the opposite.
 \examples{
 library(wmR)
 pause_on_error(TRUE)
-sum('THREEPLUSFOUR')
+\donttest{sum('THREEPLUSFOUR')}
 pause_on_error(FALSE)
-sum('THREEPLUSFOUR')
+\donttest{sum('THREEPLUSFOUR')}
 
 }
 \seealso{

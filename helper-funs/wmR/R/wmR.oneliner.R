@@ -23,9 +23,9 @@
 ##' thispc <- computername()
 ##' print(thispc)
 ##'
-##' if (computername == 'LinuxServer') {
+##' if (computername() == 'LinuxServer') {
 ##'    rootdir = '/home/wanja/data'
-##' } elseif (computername == 'Laptop') {
+##' } else if (computername() == 'Laptop') {
 ##'    rootdir = 'C:/Users/Wanja/data'
 ##' }
 ##'
@@ -50,13 +50,14 @@ computername <- function(){
 ##' @param append append this string to the result. silently ignored, if the
 ##' result isn't a string
 ##' @examples
+##' \donttest{
 ##' rootdir <- pcswitch(c('LinuxServer', 'WinLaptop', 'WinStation'),
 ##'                       append = 'User',
 ##'                       '/', 'C:/', 'F:/')
 ##'
 ##' rootdir <- pcswitch(c('LinuxServer', 'WinLaptop', 'WinStation'),
 ##'                       mean(1:99), 77, 'F:/')
-##'
+##'}
 ##'
 ##' @author Wanja Mössing
 ##' @name pcswitch
@@ -152,7 +153,8 @@ nastr <- function(n){
 libraries <- function(...){
   packs <- as.character(as.list(substitute(list(...)))[-1L])
   # 'packs' will be nonsense if a vector was entered...
-  if (length(packs) == 1 && substr(packs, 1, 2) == 'c(') {
+  if (length(packs) == 1 &&
+      (substr(packs, 1, 2) == 'c(' | grepl('packs', packs))) {
     packs <- c(...)
   }
   invisible(sapply(packs, library, character.only = TRUE))
@@ -170,9 +172,9 @@ libraries <- function(...){
 ##' @examples
 ##' library(wmR)
 ##' pause_on_error(TRUE)
-##' sum('THREEPLUSFOUR')
+##' \donttest{sum('THREEPLUSFOUR')}
 ##' pause_on_error(FALSE)
-##' sum('THREEPLUSFOUR')
+##' \donttest{sum('THREEPLUSFOUR')}
 ##'
 ##' @author Wanja Mössing
 ##' @name pause_on_error
