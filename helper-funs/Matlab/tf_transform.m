@@ -55,128 +55,34 @@ if strcmp('minmax', baseline)
     baseline = [1, size(pow, tdim)];
 end
 
-% depending on the number of dimensions, loop over subjects/channels or not
-switch ndims(pow)
-    case 2 % 1-channel & 1 subject
-        %reorder dimensions for our purpose
-        pow = permute(pow, [fdim, tdim]);
-        if bslAsIs
-            baseline = permute(baseline, [fdim, tdim]);
-            bl_pow = mean(baseline, 2);
+pow = permute(pow, [fdim, tdim, cdim, sdim]);
+%preallocate
+powz = zeros(size(pow));
+if bslAsIs
+    bl_pow = mean(baseline, 2);
+else
+    bl_pow = mean(pow(:,baseline(1):baseline(2), :, :, :, :, :, :), 2);
+end
+switch type
+    case 'z'
+        if ~bslAsIs
+            bl_powA = baseline;
         else
-            bl_pow = mean(pow(:, baseline(1):baseline(2)), 2);
+            bl_powA = pow(:, baseline(1):baseline(2),:,:,:,:,:,:);
         end
-        switch type
-            case 'z'
-                if bslAsIs
-                    bl_powA = baseline;
-                else
-                    bl_powA = pow(:, baseline(1):baseline(2));
-                end
-                powz = (pow - repmat(bl_pow, 1, size(pow,2))) ./...
-                    repmat(std(bl_powA, [], 2), 1, size(pow, 2));
-            case 'dB'
-                powz = 10*log10( bsxfun(@rdivide, pow, bl_pow));
-            case 'percent'
-                powz = ...
-                    100 * (pow - repmat(bl_pow, 1, size(pow, 2))./...
-                    repmat(bl_pow, 1, size(pow, 2)));
-            case 'div'
-                powz = ...
-                    pow ./ repmat(bl_pow, 1, size(pow, 2));
-            case 'sub'
-                powz = pow - repmat(bl_pow, 1, size(pow, 2));
-            case 'none'
-                powz = pow;
-        end
-    case 3 % Multiple channels or subjects (not AND!)
-        %reorder dimensions for our purpose
-        if isempty(cdim) %1chan+MultSub
-            pow = permute(pow, [fdim, tdim, sdim]);
-        else
-            pow = permute(pow, [fdim, tdim, cdim]);
-        end
-        if bslAsIs
-            if isempty(cdim) %1chan+MultSub
-                baseline = permute(baseline, [fdim, tdim, sdim]);
-            else
-                baseline = permute(baseline, [fdim, tdim, cdim]);
-            end
-        end
-        for i = 1:size(pow, 3) %loop over dim 3 (chans OR subjs)
-            if bslAsIs
-                bl_pow = mean(baseline(:, :, i), 2);
-            else
-                bl_pow = mean(pow(:, baseline(1):baseline(2), i), 2);
-            end
-            switch type
-                case 'z'
-                    if bslAsIs
-                        bl_powA = baseline(:, :, i);
-                    else
-                        bl_powA = pow(:, baseline(1):baseline(2), i);
-                    end
-                    powz(:,:,i) = (pow(:,:,i) - repmat(bl_pow, 1,...
-                        size(pow(:,:,i),2))) ./...
-                        repmat(std(bl_powA, [], 2), 1, size(pow(:,:,i), 2));
-                case 'dB'
-                    powz(:,:,i) = 10*log10( bsxfun(@rdivide, pow(:,:,i), bl_pow));
-                case 'percent'
-                    powz(:,:,i) = ...
-                        100 * (pow(:,:,i) - repmat(bl_pow, 1, size(pow, 2))./...
-                        repmat(bl_pow, 1, size(pow, 2)));
-                case 'div'
-                    powz(:,:,i) = ...
-                        pow(:,:,i) ./ repmat(bl_pow, 1, size(pow, 2));
-                case 'sub'
-                    powz(:,:,i) = pow(:,:,i) - repmat(bl_pow, 1, size(pow, 2));
-                case 'none'
-                    powz(:,:,i) = pow(:,:,i);
-            end
-        end
-    case 4 % Multiple channel and Multiple subjects
-        %reorder dimensions for our purpose
-        pow = permute(pow, [fdim, tdim, cdim, sdim]);
-        for isub = 1:size(pow, 4) %loop over subs
-            for ichan = 1:size(pow, 3)% & chans
-                if bslAsIs
-                    bl_pow = ...
-                        mean(baseline(:,:, ichan, isub), 2);
-                else
-                    bl_pow = ...
-                        mean(pow(:,baseline(1):baseline(2), ichan, isub), 2);
-                end
-                switch type
-                    case 'z'
-                        if bslAsIs
-                            bl_powA = baseline(:, :, ichan, isub);
-                        else
-                            bl_powA = pow(:, baseline(1):baseline(2),...
-                                ichan, isub);
-                        end
-                        powz(:,:,ichan,isub) = ...
-                            (pow(:, :, ichan, isub) - ...
-                            repmat(bl_pow, 1, size(pow, 2))) ./...
-                            repmat(std(bl_powA, [], 2), 1, size(pow, 2));
-                    case 'dB'
-                        powz(:,:,ichan,isub) = ...
-                            10 * log10( bsxfun(@rdivide,...
-                            pow(:,:,ichan,isub), bl_pow));
-                    case 'percent'
-                        powz(:,:,ichan,isub) = ...
-                            100 * (pow(:,:,ichan,isub) - ...
-                            repmat(bl_pow, 1, size(pow, 2))./...
-                            repmat(bl_pow, 1, size(pow, 2)));
-                    case 'div'
-                        powz(:,:,ichan,isub) = ...
-                            pow(:,:,ichan,isub) ./ repmat(bl_pow, 1, size(pow, 2));
-                    case 'sub'
-                        powz(:,:,ichan,isub) = pow(:,:,ichan,isub) - ...
-                            repmat(bl_pow, 1, size(pow, 2));
-                    case 'none'
-                        powz(:,:,ichan,isub) = pow(:,:,ichan,isub);
-                end
-            end
-        end
+        powz = bsxfun(@rdivide,...
+            bsxfun(@minus, pow, bl_pow),...
+            std(bl_powA, [], 2));
+    case 'dB'
+        powz = 10 * log10(bsxfun(@rdivide, pow, bl_pow));
+    case 'percent'
+        powz = 100 * bsxfun(@rdivide,...
+            (bsxfun(@minus, pow, bl_pow)), bl_pow);
+    case 'div'
+        powz = bsxfun(@rdivide, pow, bl_pow);
+    case 'sub'
+        powz = bsxfun(@minus, pow, bl_pow);
+    case 'none'
+        powz = pow;
 end
 end

@@ -25,7 +25,7 @@
 %
 %  ShowData: default true - show histrogramm
 
-function figHand = PlotModelFit(model, params, data, varargin)
+function figHand = PlotModelFitWithShowData(model, params, data, varargin)
   % Extra arguments and parsing
   args = struct('PdfColor', [0.54, 0.61, 0.06], 'NumberOfBins', 40, ...
                 'ShowNumbers', true, 'ShowAxisLabels', true, ...
