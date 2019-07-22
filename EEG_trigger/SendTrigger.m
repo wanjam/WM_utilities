@@ -29,20 +29,20 @@ function SendTrigger(triggervalue, triggerduration, Port)
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 if IsWin
-global IO64PARALLELPORTOBJ;
-
-if nargin<3
-    Port = hex2dec('0378');
-end
-
-if isempty(IO64PARALLELPORTOBJ)
-    OpenTriggerPort; % create interface object and open connection
-end
+    global IO64PARALLELPORTOBJ;
+    
+    if nargin<3
+        Port = hex2dec('0378');
+    end
+    
+    if isempty(IO64PARALLELPORTOBJ)
+        OpenTriggerPort; % create interface object and open connection
+    end
     
     
-io64(IO64PARALLELPORTOBJ,Port,triggervalue) %output command
-WaitSecs(triggerduration);
-io64(IO64PARALLELPORTOBJ,Port,0) %null command
+    io64(IO64PARALLELPORTOBJ,Port,triggervalue) %output command
+    WaitSecs(triggerduration);
+    io64(IO64PARALLELPORTOBJ,Port,0) %null command
 end
 
 if IsLinux

@@ -34,24 +34,24 @@ if nargin==0
 end
 
 if IsWin
-global IO64PARALLELPORTOBJ;
-
-%create IO64 interface object
-IO64PARALLELPORTOBJ = io64();
-
-%install the inpoutx64.dll driver
-%status = 0 if installation successful
-status = io64(IO64PARALLELPORTOBJ);
-if(status ~= 0)
-    disp('inp/outp installation failed!')
-end
+    global IO64PARALLELPORTOBJ;
+    
+    %create IO64 interface object
+    IO64PARALLELPORTOBJ = io64();
+    
+    %install the inpoutx64.dll driver
+    %status = 0 if installation successful
+    status = io64(IO64PARALLELPORTOBJ);
+    if(status ~= 0)
+        disp('inp/outp installation failed!')
+    end
 end
 
 if IsLinux
     try
-    ppdev_mex('Open', portaddress);
-    global TTLPORTOPEN
-    TTLPORTOPEN = 1;
+        ppdev_mex('Open', portaddress);
+        global TTLPORTOPEN
+        TTLPORTOPEN = 1;
     catch ME
         fprintf(2,'opening the parallel port failed. Did you run Install_EEG_trigger.m and read the readme.m?\n');
         rethrow(ME);
