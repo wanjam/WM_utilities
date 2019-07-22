@@ -38,6 +38,8 @@ function [h, c] = func_tf_topoplot(pow, varargin)
 %
 % Wanja Moessing, moessing@wwu.de, Nov 2017
 
+eeglab('nogui');
+
 % parse variable input
 p = inputParser;
 p.FunctionName = 'funct_tf_topoplot';

@@ -36,11 +36,11 @@ else
     end
 end
 
-suff = regexp(psfile, '\.(ps|eps)');
-pdffile = [psfile(1:suff), 'pdf'];
+[pspath,prefix] = fileparts(psfile);
+pdffile = fullfile(pspath, strcat(prefix, '.pdf'));
 
-system([ps2pdf, ' -dPDFSETTINGS=/default -sPAPERSIZE=a3 "', psfile,...
-    '" "', pdffile, '"']);
+system(strcat(ps2pdf, ' -dPDFSETTINGS=/default -sPAPERSIZE=a3 "', psfile,...
+    '" "', pdffile, '"'));
 
 if nargin < 2
     remove_original = 0;
