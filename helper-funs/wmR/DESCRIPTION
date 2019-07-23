@@ -11,9 +11,10 @@ License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
-Depends: R (>= 3.4.3)
+Depends: R (>= 3.6)
 Imports: afex (>= 0.19-1),
     CircStats (>= 0.2-4),
     data.table (>= 1.10.4-3),
     ggplot2 (>= 2.2.1),
-    pracma (>= 2.1.4)
+    pracma (>= 2.1.4),
+    Rmisc (>= 1.5.0)

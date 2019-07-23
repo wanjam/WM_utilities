@@ -4,7 +4,7 @@
 \alias{sem}
 \alias{plotSEMminmax}
 \alias{plotSEM}
-\title{Calculate standard error of the mean.}
+\title{Calculate default between group standard error of the mean.}
 \usage{
 sem(x, na.rm = FALSE)
 
@@ -22,9 +22,12 @@ a numeric vector with values for errorbars
 }
 \description{
 \code{sem} returns the standard error of the mean
+\deqn{\sigma_\bar{x} = \frac{\sigma}{\sqrt{n}}}
 \code{plotSEM} is useful for ggplot. It returns a vector with:
 mean-SEM, mean, mean+SEM; so very handy for errorbars.
 \code{plotSEMminmax} additionally returns minimum and maximum for more elaborate errorbars.
+For within group comparisons, use Cosineau-Morey CIs/SEs (e.g., \code{Rmisc::summarySEwithin}).
+Use \code{stat_CosineauMoreyCI} as a layer for ggplot.
 }
 \examples{
 x <- rnorm(1000, mean = 5, sd = 90)
@@ -47,6 +50,9 @@ ggplot(data = dat, aes(x = condition, y = measure)) +
                     geom = "pointrange") +
        ggtitle("Min, Mean-1SEM, Mean, Mean+1SEM, Max")
 
+}
+\seealso{
+Rmisc::summarySEwithin, plotSEM, stat_CosineauMoreyCI, plotSEMminmax
 }
 \author{
 Wanja Mössing
