@@ -19,11 +19,29 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble, 
 %           P.CalibLocations = [X-A,Y-B,  X,Y-B,  X+A,Y-B,...
 %                               X-A,Y,    X,Y,    X+A,Y,...
 %                               X-A,Y+B,  X,Y+B,  X+A,Y+B];
+%       'P.binocular': optional boolean. Prepare the tracker to do
+%                      binocular measurements? Default is 0 (monocular).
+%
+%       The following fields all have default values. They assure a
+%       consistent setup and should only be specified in case you have good
+%       reason to deviate from the default:
+%       'P.binocular': boolean. 0 (default) = monocular
+%       'P.heuristic_filter': char, default is '1 2' (as in DEFAULT.INI)
+%       'P.active_eye': char, 'L' or 'R'
+%       'P.pupil_size_diameter': char, 'AREA' (def.),'DIAMETER',..(see man)
+%       'P.sampling_rate': int, 1000 (def.), 500, 250
+%       'P.ellipse_mode': bool, 0 (def.) centroid, 1 is ellipse
+%       'P.initial_thresholds': char, see SR programmers guide
+%       'P.corneal_mode': bool, 1 (def.) use pupil-CR mode, 0 is pupil-only
+%       'P.elcl_tt_power': float, Illuminator power. default is 1 (100%)
+%
 %   'window': PTB window pointer
 %   'Name': char. Filename to which data are written. Check eyelink naming
 %           conventions. If inputDialog is 1, you're prompted for a
 %           filename, with 'Name' entered as default. Else, Name is simply
 %           taken as filename.
+%   'inputDialog': bool. Ask the user whether the filename is good (pop-up)?
+%                  Default is 0 (don't ask).
 %   'FilePreamble': Optional, specify an experiment-specific preamble in 
 %                   the edf-files. Defaults to:'''Eyetracking Dataset AE 
 %                   Busch WWU Muenster <current working directory>'''
@@ -39,8 +57,9 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble, 
 % WM: added FilePreamble on 26/09/2016
 % WM: added custom calibrationpoints on 08/09/2017
 % WM: add defaults and new documentation (22.08.2018)
+% WM: add additional defaults to circumvent LASTRUN.INI 29/07/2019
 
-%  Copyright (C) 2016-2018 Wanja Mössing
+%  Copyright (C) 2016-2019 Wanja Mössing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
@@ -55,7 +74,11 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble, 
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if exist('eyelinkconnected','var')
+
+%% Parse Input %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if exist('eyelinkconnected', 'var')
     if eyelinkconnected
         P.isET = 1;
     else
@@ -69,6 +92,36 @@ elseif P.isET == 0
     disp('No Eyelink connected - no connection started.');
     return
 end
+
+if ~isfield(P, 'binocular')
+    P.binocular = 0;
+end
+if ~isfield(P, 'heuristic_filter')
+    P.heuristic_filter = '1 2';
+end
+if ~isfield(P, 'active_eye')
+    P.active_eye = 'R';
+end
+if ~isfield(P, 'pupil_size_diameter')
+    P.pupil_size_diameter = 0;
+end
+if ~isfield(P, 'sampling_rate')
+    P.sampling_rate = 1000; %(250, 500, 1000, 2000) 
+end
+if ~isfield(P, 'ellipse_mode')
+    P.ellipse_mode = 0;
+end
+if ~isfield(P, 'initial_thresholds')
+    P.initial_thresholds = '66, 40, 66, 150, 150';
+    disp('Image processing thresholds set to default.');
+end
+if ~isfield(P, 'corneal_mode')
+    P.corneal_mode = 1;
+end
+if ~isfield(P, 'elcl_tt_power')
+    P.elcl_tt_power = 1;
+end
+
 
 Screen(window, 'BlendFunction', GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -154,7 +207,7 @@ if length(Name(1:strfind(Name,'.edf')-1))>8 || ~isempty(Name(regexp(Name(1:strfi
     CloseAndCleanup;
 end
 
-P.el=EyelinkInitDefaults(window);
+P.el = EyelinkInitDefaults(window);
 
 % Open connection and throw an error if unsuccessful
 if ~EyelinkInit(P.trackr.dummymode)
@@ -220,6 +273,56 @@ else
     Eyelink('command', 'generate_default_targets = YES');
 end
 
+%% build setup defaults, to avoid having settings of a previous measurement
+
+% always initiate the right Eye (just to have a default)
+if strcmp(P.active_eye, 'R')
+    Eyelink('command', 'active_eye = RIGHT');
+elseif strcmp(P.active_eye, 'L')
+    Eyelink('command', 'active_eye = LEFT');
+end
+
+% track monocular or binocular?
+if P.binocular
+    Eyelink('command', 'binocular_enabled = YES');	
+else
+    Eyelink('command', 'binocular_enabled = NO');	
+end
+
+% Use heuristic filtering?
+Eyelink('command', 'heuristic_filter = %s', P.heuristic_filter);
+
+% Convert pupil size to diameter?
+if P.pupil_size_diameter
+    Eyelink('command', 'pupil_size_diameter = DIAMETER');
+else
+    Eyelink('command', 'pupil_size_diameter = AREA');
+end
+
+% set default sampling rate
+Eyelink('command', 'sample_rate = %d', P.sampling_rate);
+
+% set centroid mode
+if P.ellipse_mode
+    Eyelink('command', 'use_ellipse_fitter = YES');
+else
+    Eyelink('command', 'use_ellipse_fitter = NO');
+end
+
+% set default graphical thresholds
+Eyelink('command', 'initial_thresholds = %s', P.initial_thresholds);
+
+% set to use pupil-corneal mode and not just pupil-only mode
+if P.corneal_mode
+    Eyelink('command', 'corneal_mode = YES');
+else
+    Eyelink('command', 'corneal_mode = NO');
+end
+
+% set Illuminator to 100%
+Eyelink('command', 'elcl_tt_power = %d', P.elcl_tt_power); 
+
+%% start calibration
 % make sure we're still connected.
 if Eyelink('IsConnected')~=1 && P.trackr.dummymode == 0
     fprintf('not connected, clean up\n');
