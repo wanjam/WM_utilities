@@ -6,6 +6,8 @@
 \alias{stat_CosineauMoreySE}
 \alias{.CosiMoreCIs}
 \alias{.CosiMoreSEs}
+\alias{.doSummarySEwithin}
+\alias{.datasetupSEwithin}
 \title{Add layer with Cosineau-Morey 95\% within group CIs/ SE to ggplot}
 \format{An object of class \code{CosiMoreCIs} (inherits from \code{Stat}, \code{ggproto}, \code{gg}) of length 6.}
 \usage{
@@ -20,6 +22,10 @@ stat_CosineauMoreySE(mapping = NULL, data = NULL,
 .CosiMoreCIs
 
 .CosiMoreSEs
+
+.doSummarySEwithin(data = data, cise = "ci")
+
+.datasetupSEwithin(data = data, scales = scales)
 }
 \arguments{
 \item{mapping}{Set of aesthetic mappings created by aes() or aes_(). If specified and inherit.aes = TRUE (the default), it is combined with the default mapping at the top level of the plot. You must supply mapping if there is no plot mapping.}

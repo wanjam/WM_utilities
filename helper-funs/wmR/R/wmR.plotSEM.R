@@ -181,52 +181,62 @@ stat_CosineauMoreySE <- function(mapping = NULL, data = NULL, geom = "pointrange
                          elli = list(...)
                          return(elli[[2]])
                        },
-                       setup_data = function(data, scales) {
-                         res = summarySEwithin(data, measurevar = 'y',
-                                               withinvars = 'x',
-                                               idvar = 'idvar',
-                                               conf.interval = scales$conf.interval,
-                                               na.rm = scales$na.rm)
+                       compute_panel = function(data, scales) {
                          data = data.table(data)
-                         res = data.table(res)
-                         res = res[, x := as.integer(x)]
-                         res = merge(data, res, by.x = 'x', by.y = 'x', no.dups = T)
-                         res = res[, y.x := NULL][, y := y.y][, y.y := NULL]
-                         res = res[, ':='(ymin = y - ci, ymax = y + ci)]
-                         return(res)
+                         data[,.doSummarySEwithin(.SD, 'ci'), by = colour]
                        },
-                       compute_group = function(data, scales) {
-                         data
-                       },
-
+                       setup_data = function(data, scales) {
+                         return(.datasetupSEwithin(data,scales))},
                        required_aes = c("x", 'y', 'idvar')
 )
 
 ##' @rdname stat_CosineauMoreyCI
 ##' @name .CosiMoreSEs
 .CosiMoreSEs <- ggproto("CosiMoreSEs", Stat,
-                       extra_params = c('na.rm', 'conf.interval'),
-                       setup_params = function(...){
-                         elli = list(...)
-                         return(elli[[2]])
-                       },
-                       setup_data = function(data, scales) {
-                         res = summarySEwithin(data, measurevar = 'y',
-                                               withinvars = 'x',
-                                               idvar = 'idvar',
-                                               conf.interval = scales$conf.interval,
-                                               na.rm = scales$na.rm)
-                         data = data.table(data)
-                         res = data.table(res)
-                         res = res[, x := as.integer(x)]
-                         res = merge(data, res, by.x = 'x', by.y = 'x', no.dups = T)
-                         res = res[, y.x := NULL][, y := y.y][, y.y := NULL]
-                         res = res[, ':='(ymin = y - se, ymax = y + se)]
-                         return(res)
-                       },
-                       compute_group = function(data, scales) {
-                         data
-                       },
-
-                       required_aes = c("x", 'y', 'idvar')
+                        extra_params = c('na.rm', 'conf.interval'),
+                        setup_params = function(...){
+                          elli = list(...)
+                          return(elli[[2]])
+                        },
+                        compute_panel = function(data, scales) {
+                          data = data.table(data)
+                          data[,.doSummarySEwithin(.SD, 'se'), by = colour]
+                        },
+                        setup_data = function(data, scales) {
+                          return(.datasetupSEwithin(data,scales))},
+                        required_aes = c("x", 'y', 'idvar')
 )
+
+##' @rdname stat_CosineauMoreyCI
+##' @name .doSummarySEwithin
+.doSummarySEwithin <- function(data = data, cise='ci') {
+  res = summarySEwithin(data, measurevar = 'y',
+                        withinvars = 'x',
+                        idvar = 'idvar',
+                        conf.interval = data[, unique(confint)],
+                        na.rm = data[, unique(na.rm)])
+  res = data.table(res)
+  res = res[, x := as.integer(x)]
+  res = merge(data, res, by.x = 'x', by.y = 'x', no.dups = T)
+  res = res[, y.x := NULL][, y := y.y][, y.y := NULL]
+  res = res[, ':='(ymin = y - get(cise), ymax = y + get(cise))]
+  return(res)
+}
+
+##' @rdname stat_CosineauMoreyCI
+##' @name .datasetupSEwithin
+.datasetupSEwithin <- function(data = data, scales = scales) {
+  data = as.data.table(data)
+  if (data[, is.factor(idvar)]) {
+    warning(paste('If idvar is a factor, ggplot',
+                  'attempts to group by it (why?).',
+                  'Converting to integer...'))
+    data[, idvar := as.integer(idvar)]
+  }
+  data[,':='(confint = scales$conf.interval,
+             na.rm = scales$na.rm)]
+  if (!('colour' %in% colnames(data))) {
+    data[, colour := 1]
+  }
+  return(data)
+}
