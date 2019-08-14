@@ -33,7 +33,9 @@ function [P, window] = EyelinkStart(P, window, Name, inputDialog, FilePreamble, 
 %       'P.ellipse_mode': bool, 0 (def.) centroid, 1 is ellipse
 %       'P.initial_thresholds': char, see SR programmers guide
 %       'P.corneal_mode': bool, 1 (def.) use pupil-CR mode, 0 is pupil-only
-%       'P.elcl_tt_power': float, Illuminator power. default is 1 (100%)
+%       'P.elcl_tt_power': float, Illuminator power. default is 2 (75%)
+%       'P.eyelink_conf_table': use specific configuration table (def.
+%                               'MTABLER')
 %
 %   'window': PTB window pointer
 %   'Name': char. Filename to which data are written. Check eyelink naming
@@ -119,8 +121,12 @@ if ~isfield(P, 'corneal_mode')
     P.corneal_mode = 1;
 end
 if ~isfield(P, 'elcl_tt_power')
-    P.elcl_tt_power = 1;
+    P.elcl_tt_power = 2;
 end
+if ~isfield(P, 'eyelink_conf_table')
+    P.eyelink_conf_table = 'MTABLER';
+end
+
 
 
 Screen(window, 'BlendFunction', GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -319,7 +325,10 @@ else
     Eyelink('command', 'corneal_mode = NO');
 end
 
-% set Illuminator to 100%
+% select MTABLER as default configuration table (monocular 35mm)
+Eyelink('command', 'elcl_select_configuration %s', P.eyelink_conf_table);
+
+% set Illuminator to 75%
 Eyelink('command', 'elcl_tt_power = %d', P.elcl_tt_power); 
 
 %% start calibration

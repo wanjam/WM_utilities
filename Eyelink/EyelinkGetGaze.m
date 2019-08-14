@@ -37,8 +37,8 @@ function [mx,my,hsmvd] = EyelinkGetGaze(P, IgnoreBlinks,...
 % Reduced dependencies on fields of P. WM, July 2018
 
 
-%  Copyright (C) 2016 Wanja Mössing
-%  Copyright (C) 2018 Wanja Mössing
+%  Copyright (C) 2016 Wanja Mï¿½ssing
+%  Copyright (C) 2018 Wanja Mï¿½ssing
 %
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
