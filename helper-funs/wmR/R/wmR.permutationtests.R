@@ -32,16 +32,21 @@
 ##' @param timeCol name of the column in data coding the time (default: 'Time')
 ##' @param nperm number of permutations (default: 1000)
 ##' @param altrntv passed to the t.test functions (default: 'two.sided'); In
-##' case of 'greater' or 'less', you need to specify \code{comparison}
-##' @param treatment.group only necessary if altrntv is 'greater' or 'less'. Indicates which group is supposed to be greater or less than the other group. Should be a char matching the label in condCol. (e.g., 'A', 'treatment', 'valid-cue', etc.)
+##' case of 'greater' or 'less', you need to specify \code{treatment.group}
+##' @param treatment.group only necessary if \code{altrntv} is 'greater' or
+##' 'less'. Indicates which group is supposed to be greater or less than the
+##' other group. Should be a char matching the label in condCol. (e.g., 'A',
+##' 'treatment', 'valid-cue', etc.)
 ##' @param alpha significance threshold used for significance detection
 ##' (default: 0.05)
 ##' @param cluster.length minimum number of consequtive significant samples to
 ##' be considered a significant cluster (default: 5)
 ##' @return a \code{data.table} with one row per timepoint. Contains columns for
-##'  cluster significance, significance, lower
+##'  cluster-significance, single-sample-significance, t-value of the true
+##'  t-test and permutation p-values
 ##' @details
-##' alternative = "greater" is the alternative that The first condition occuring in the condCol has a larger mean than the second condition.
+##' alternative = "greater" is the alternative that the treatment.group has a
+##' larger mean than the other group.
 ##' @examples
 ##' # create fake data
 ##' data = data.table()
@@ -107,9 +112,6 @@ TimeSeriesPermutationTest <- function(data, condCol='condition', dataCol='mV',
                                  var.equal = T, conf.level = 1 - alpha)),
                  by = .(ti, iperm)]
 
-  # determine significance at indicated alpha level per timepoint
-  significance = merge(baseStat, thresholds)
-
   # calculate p-vals
   cat('Calculating p-values...')
   if (altrntv == 'two.sided') {
@@ -125,31 +127,31 @@ TimeSeriesPermutationTest <- function(data, condCol='condition', dataCol='mV',
     } else if (altrntv == 'less') {
       i.p = 1 - i.p
     }
-    significance[ti == iti, p := i.p]
+    baseStat[ti == iti, p := i.p]
   }
-  significance[, is.significant := FALSE]
-  significance[p < alpha, is.significant := TRUE]
+  baseStat[, is.significant := FALSE]
+  baseStat[p < alpha, is.significant := TRUE]
 
   cat('detecting significant clusters...')
   # there must be a faster data.table operation for this...
-  significance[, significant.cluster := is.significant]
-  setorder(significance, ti)
+  baseStat[, significant.cluster := is.significant]
+  setorder(baseStat, ti)
 
   count = 0
   itis = c()
-  for (iti in significance[, unique(ti)]) {
-    foo = significance[ti == iti, is.significant]
+  for (iti in baseStat[, unique(ti)]) {
+    foo = baseStat[ti == iti, is.significant]
     if (foo) {
       count = count + 1
       itis = c(itis, iti)
     } else {
       if (count %between% list(1, cluster.length)) {
-        significance[ti %in% itis, significant.cluster := FALSE]
+        baseStat[ti %in% itis, significant.cluster := FALSE]
       }
       count = 0
       itis = c()
     }
   }
-
-  return(significance)
+  setnames(baseStat, 'ti', timeCol)
+  return(baseStat)
 }

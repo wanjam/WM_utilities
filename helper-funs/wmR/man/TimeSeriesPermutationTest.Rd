@@ -27,7 +27,7 @@ following content}
 \item{nperm}{number of permutations (default: 1000)}
 
 \item{altrntv}{passed to the t.test functions (default: 'two.sided'); In
-case of 'greater' or 'less', you need to specify \code{comparison}}
+case of 'greater' or 'less', you need to specify \code{treatment.group}}
 
 \item{alpha}{significance threshold used for significance detection
 (default: 0.05)}
@@ -35,11 +35,15 @@ case of 'greater' or 'less', you need to specify \code{comparison}}
 \item{cluster.length}{minimum number of consequtive significant samples to
 be considered a significant cluster (default: 5)}
 
-\item{treatment.group}{only necessary if altrntv is 'greater' or 'less'. Indicates which group is supposed to be greater or less than the other group. Should be a char matching the label in condCol. (e.g., 'A', 'treatment', 'valid-cue', etc.)}
+\item{treatment.group}{only necessary if \code{altrntv} is 'greater' or
+'less'. Indicates which group is supposed to be greater or less than the
+other group. Should be a char matching the label in condCol. (e.g., 'A',
+'treatment', 'valid-cue', etc.)}
 }
 \value{
 a \code{data.table} with one row per timepoint. Contains columns for
- cluster significance, significance, lower
+ cluster-significance, single-sample-significance, t-value of the true
+ t-test and permutation p-values
 }
 \description{
 \code{TimeSeriesPermutationTest} runs a two-sample time-series
@@ -49,7 +53,8 @@ compares the resulting t-statistics with a permutation distribuion. A minimal
 cluster length for consequitive timepoints can be specified (see below.)
 }
 \details{
-alternative = "greater" is the alternative that The first condition occuring in the condCol has a larger mean than the second condition.
+alternative = "greater" is the alternative that the treatment.group has a
+larger mean than the other group.
 }
 \examples{
 # create fake data
