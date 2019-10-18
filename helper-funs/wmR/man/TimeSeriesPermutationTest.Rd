@@ -43,7 +43,8 @@ other group. Should be a char matching the label in condCol. (e.g., 'A',
 \value{
 a \code{data.table} with one row per timepoint. Contains columns for
  cluster-significance, single-sample-significance, t-value of the true
- t-test and permutation p-values
+ t-test and permutation p-values. Two additional columns code the beginning
+ and end of each cluster.
 }
 \description{
 \code{TimeSeriesPermutationTest} runs a two-sample time-series
@@ -58,12 +59,24 @@ larger mean than the other group.
 }
 \examples{
 # create fake data
+libraries(data.table, ggplot)
 data = data.table()
 for (id in 1:10){
-  data = rbind(data, data.table(mV = runif(4000, -5, 5),
+  data = rbind(data, data.table(mV = rnorm(4000, 2, 0.5),
                                condition = c(rep('A', 2000), rep('B', 2000)),
                                Time = rep(-500:1499, 2), ID = id))
                                }
+# create two "real" clusters around Time 500 & 1000
+data[Time \%between\% list(490, 510) & condition == 'A', mV := mV + 10]
+data[Time \%between\% list(990, 1010) & condition == 'A', mV := mV - 10]
+
+# plot data
+ggplot(data[, .(mV = mean(mV)), by = .(ID, Time, condition)],
+       aes(x = Time, y = mV, color = condition)) +
+  geom_line()
+
+# run test
+foo = TimeSeriesPermutationTest(data, nperm = 100)
 
 }
 \seealso{

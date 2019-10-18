@@ -43,18 +43,31 @@
 ##' be considered a significant cluster (default: 5)
 ##' @return a \code{data.table} with one row per timepoint. Contains columns for
 ##'  cluster-significance, single-sample-significance, t-value of the true
-##'  t-test and permutation p-values
+##'  t-test and permutation p-values. Two additional columns code the beginning
+##'  and end of each cluster.
 ##' @details
 ##' alternative = "greater" is the alternative that the treatment.group has a
 ##' larger mean than the other group.
 ##' @examples
 ##' # create fake data
+##' libraries(data.table, ggplot)
 ##' data = data.table()
 ##' for (id in 1:10){
-##'   data = rbind(data, data.table(mV = runif(4000, -5, 5),
+##'   data = rbind(data, data.table(mV = rnorm(4000, 2, 0.5),
 ##'                                condition = c(rep('A', 2000), rep('B', 2000)),
 ##'                                Time = rep(-500:1499, 2), ID = id))
 ##'                                }
+##' # create two "real" clusters around Time 500 & 1000
+##' data[Time %between% list(490, 510) & condition == 'A', mV := mV + 10]
+##' data[Time %between% list(990, 1010) & condition == 'A', mV := mV - 10]
+##'
+##' # plot data
+##' ggplot(data[, .(mV = mean(mV)), by = .(ID, Time, condition)],
+##'        aes(x = Time, y = mV, color = condition)) +
+##'   geom_line()
+##'
+##' # run test
+##' foo = TimeSeriesPermutationTest(data, nperm = 100)
 ##'
 ##' @author Wanja Mössing
 ##' @name TimeSeriesPermutationTest
@@ -93,31 +106,38 @@ TimeSeriesPermutationTest <- function(data, condCol='condition', dataCol='mV',
 
 
   # compute true t-statistic per timepoint
-  gettval = function(...){
-    as.numeric(t.test(...)$statistic)
+  gettval = function(..., n, maxn, pb){
+    setTxtProgressBar(pb, n)
+    return(as.numeric(t.test(...)$statistic))
+    # print((n/maxn))
   }
-  cat('Computing base t-statistics...')
+  cat('\nComputing base t-statistics...\n')
+  pb <- txtProgressBar(min = 0, max = length(tvals), style = 3)
   baseStat = DT[, .(t = gettval(A, B, alternative = altrntv,
                                 paired = T, var.equal = T,
-                                conf.level = 1 - alpha)),
+                                conf.level = 1 - alpha,
+                                n = .GRP, maxn = .N, pb = pb)),
                 by = ti]
 
   # shuffle labels and compute timepoint-wise permutation distributions
-  cat('Shuffling labels...')
+  cat('\nShuffling labels...')
   res = rbindlist(replicate(nperm, DT, simplify = F))
   res[, iperm := rep(1:nperm, each = DT[,.N])]
   res[, ':='(A = sample(A), B = sample(B)), by = .(id, iperm)]
-  cat('Computing t-statistics for permutations...')
+  cat('\nComputing t-statistics for permutations...\n')
+  pb <- txtProgressBar(min = 0, max = length(tvals) * nperm, style = 3)
   permStat = res[, .(t = gettval(A, B, alternative = altrntv, paired = T,
-                                 var.equal = T, conf.level = 1 - alpha)),
+                                 var.equal = T, conf.level = 1 - alpha,
+                                 n = .GRP, maxn = .N, pb = pb)),
                  by = .(ti, iperm)]
 
   # calculate p-vals
-  cat('Calculating p-values...')
+  cat('\nCalculating p-values...\n')
   if (altrntv == 'two.sided') {
     alpha = alpha/2
   }
-
+  pb = txtProgressBar(min = 0, max = length(tvals), style = 3)
+  pbcount = 0;
   for (iti in tvals) {
     permts = permStat[ti == iti, t]
     baset  = baseStat[ti == iti, t]
@@ -128,29 +148,44 @@ TimeSeriesPermutationTest <- function(data, condCol='condition', dataCol='mV',
       i.p = 1 - i.p
     }
     baseStat[ti == iti, p := i.p]
+    pbcount = pbcount + 1
+    setTxtProgressBar(pb, pbcount)
   }
   baseStat[, is.significant := FALSE]
   baseStat[p < alpha, is.significant := TRUE]
 
-  cat('detecting significant clusters...')
+  cat('\ndetecting significant clusters...\n')
   # there must be a faster data.table operation for this...
   baseStat[, significant.cluster := is.significant]
+  baseStat[, cluster.enum.start := 0]
+  baseStat[, cluster.enum.end := 0]
   setorder(baseStat, ti)
 
   count = 0
+  clustercount = 0
   itis = c()
+
+  # loop over timepoints and count the consequitively significant timepoints
+  pb = txtProgressBar(min = 0, max = length(tvals), style = 3)
+  pbcount = 0
   for (iti in baseStat[, unique(ti)]) {
     foo = baseStat[ti == iti, is.significant]
     if (foo) {
       count = count + 1
       itis = c(itis, iti)
-    } else {
-      if (count %between% list(1, cluster.length)) {
-        baseStat[ti %in% itis, significant.cluster := FALSE]
+    } else {# when the current timepoint is not significant...
+      if (count %between% list(1, cluster.length)) { # and we did't have n consequitively significant timepoints
+        baseStat[ti %in% itis, significant.cluster := FALSE] # set all those to false
+      } else if (count >= cluster.length) { # if we detected a cluster
+        clustercount = clustercount + 1
+        baseStat[ti == itis[1], cluster.enum.start := clustercount]
+        baseStat[ti == tail(itis, 1), cluster.enum.end := clustercount]
       }
       count = 0
       itis = c()
     }
+    pbcount = pbcount + 1
+    setTxtProgressBar(pb, pbcount)
   }
   setnames(baseStat, 'ti', timeCol)
   return(baseStat)
