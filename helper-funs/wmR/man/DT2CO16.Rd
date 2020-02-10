@@ -4,8 +4,14 @@
 \alias{DT2CO16}
 \title{DT2C016}
 \usage{
-DT2CO16(DT, dt.X = "^X", dt.TT = "^TT", dt.NT = "^NT",
-  dt.Trial = "^Trial", type = "rad")
+DT2CO16(
+  DT,
+  dt.X = "^X",
+  dt.TT = "^TT",
+  dt.NT = "^NT",
+  dt.Trial = "^Trial",
+  type = "rad"
+)
 }
 \arguments{
 \item{DT}{a \code{data.table} containg one column with X (responses) data,

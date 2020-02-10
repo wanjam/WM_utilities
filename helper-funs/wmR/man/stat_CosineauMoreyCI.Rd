@@ -11,13 +11,29 @@
 \title{Add layer with Cosineau-Morey 95\% within group CIs/ SE to ggplot}
 \format{An object of class \code{CosiMoreCIs} (inherits from \code{Stat}, \code{ggproto}, \code{gg}) of length 6.}
 \usage{
-stat_CosineauMoreyCI(mapping = NULL, data = NULL,
-  geom = "pointrange", position = "identity", show.legend = NA,
-  inherit.aes = TRUE, na.rm = TRUE, conf.interval = 0.95, ...)
+stat_CosineauMoreyCI(
+  mapping = NULL,
+  data = NULL,
+  geom = "pointrange",
+  position = "identity",
+  show.legend = NA,
+  inherit.aes = TRUE,
+  na.rm = TRUE,
+  conf.interval = 0.95,
+  ...
+)
 
-stat_CosineauMoreySE(mapping = NULL, data = NULL,
-  geom = "pointrange", position = "identity", show.legend = NA,
-  inherit.aes = TRUE, na.rm = TRUE, conf.interval = 0.95, ...)
+stat_CosineauMoreySE(
+  mapping = NULL,
+  data = NULL,
+  geom = "pointrange",
+  position = "identity",
+  show.legend = NA,
+  inherit.aes = TRUE,
+  na.rm = TRUE,
+  conf.interval = 0.95,
+  ...
+)
 
 .CosiMoreCIs
 

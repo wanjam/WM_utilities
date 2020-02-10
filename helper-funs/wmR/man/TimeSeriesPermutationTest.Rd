@@ -4,10 +4,18 @@
 \alias{TimeSeriesPermutationTest}
 \title{Run a paired two sample permutation test for timeseries (e.g., ERPs)}
 \usage{
-TimeSeriesPermutationTest(data, condCol = "condition", dataCol = "mV",
-  idCol = "ID", timeCol = "Time", nperm = 1000,
-  altrntv = "two.sided", alpha = 0.05, cluster.length = 5,
-  treatment.group = "")
+TimeSeriesPermutationTest(
+  data,
+  condCol = "condition",
+  dataCol = "mV",
+  idCol = "ID",
+  timeCol = "Time",
+  nperm = 1000,
+  altrntv = "two.sided",
+  alpha = 0.05,
+  cluster.length = 5,
+  treatment.group = ""
+)
 }
 \arguments{
 \item{data}{a \code{data.table} in long format with columns for at least the

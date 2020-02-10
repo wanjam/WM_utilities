@@ -4,9 +4,16 @@
 \alias{blink.detect}
 \title{Detect blinks in (Eyelink 1000) pupil dilation data}
 \usage{
-blink.detect(pddt, minDilation = 500, maxDeltaDilation = 5,
-  TrialCol = "Trial", SR_Blink_Col = NA, use_SR = FALSE,
-  verbose = TRUE, expandblinks = 0)
+blink.detect(
+  pddt,
+  minDilation = 500,
+  maxDeltaDilation = 5,
+  TrialCol = "Trial",
+  SR_Blink_Col = NA,
+  use_SR = FALSE,
+  verbose = TRUE,
+  expandblinks = 0
+)
 }
 \arguments{
 \item{pddt}{a pupil dilation \code{data.table} of a single participant

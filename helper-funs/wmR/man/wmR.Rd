@@ -3,7 +3,6 @@
 \docType{package}
 \name{wmR}
 \alias{wmR}
-\alias{wmR-package}
 \title{wmR: A collection of functions I (Wanja Mössing) frequently use.}
 \description{
 Only use this if you know what you're doing!

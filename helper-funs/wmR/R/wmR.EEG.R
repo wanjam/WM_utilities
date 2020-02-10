@@ -1,0 +1,161 @@
+# wmR::EEG, set of functions for EEG processing/plotting
+#     Copyright (C) 2020 Wanja Mössing
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+##' @title TF_ggplot
+##' @description creates a time-frequency plot. Optionally with a highlighted
+##' area and/or contours. Can deal with logarithmic spacing of frequency axis.
+##' Note that this function internally smoothes both axis because TF data from
+##' EEGlab usuallyhave very small numerical imprecisions and are thus not 100%
+##' linear, which irritates ggplot. By default, values are interpolated to
+##' create a smooth visual experience. The plot imitates Matlab's 'jet' colors.
+##'
+##' @param TF a \code{data.table} in long format with columns for at least the
+##' following: Frequencies, Time, power. Must not be "longer" than this; i.e.,
+##' this function cannot handle more than one value per Frequency*Time
+##' combination. So make sure to average over channels before calling this
+##' function.
+##' @param zlim limits of the colorscale; length 2 numerical vector; e.g., \code{c(-2, 2)}
+##' @param do_interpolate boolean: Smooth plot via interpolation? (Default: TRUE)
+##' @param contours boolean: Display contour lines on top? (Default: FALSE)
+##' @param Timecol name of the column in TF coding time (default: 'Time')
+##' @param Freqcol name of the column in TF coding frequency (default: 'Hz')
+##' @param Zcol name of the column in TF containing data (default: 'pow')
+##' @param Time_unit unit of the time axis, used for label (default: 'ms')
+##' @param Freq_unit unit of the frequency axis, used for label (default: 'Hz')
+##' @param Z_unit unit of the z-axis axis, used for label (default: 'dB')
+##' @param highlight length 4 numeric vector defining the boundaries of the
+##' (optional) rectangle highlighting an area. Default \code{NA} does not show
+##' anything. Otherwise use: \code{c(ymin, ymax, xmin, xmax)}
+##' @param x_breaks numerical vector with desired breaks on x-axis. Will
+##' approximate and round internally.
+##' @param y_breaks numerical vector with desired breaks on x-axis. Will
+##' approximate and round internally.
+##' @param precise_time Due to the smoothing process, there may be rare
+##' imprecisions on the time axis. For instance, the smoothed axis might display
+##'  "1000ms", whereas this datum is actually "1001.2ms". If you set this
+##'  parameter to TRUE, you'll see the true time axis (default: FALSE).
+##' @return a \code{ggplot} object
+##' @examples
+##' library(data.table)
+##' TF <- data.table(Time = rep(seq(-500, 3000, 10), 30))
+##' TF[, Hz := 1:30, by = Time][, pow := 0]
+##' TF[Time %between% c(2000, 2500) & Hz %between% c(7, 14), pow := 2]
+##' TF_ggplot(TF, c(-2,2), highlight = c(7, 14, 2000, 2500))
+##'
+##' @author Wanja Mössing
+##' @name TF_ggplot
+##' @export TF_ggplot
+##' @seealso ggplot, geom_raster
+##' @import data.table
+##' @import ggplot2
+##' @import colorRamps
+##' @import scales
+##' @import ggthemes
+##'
+TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
+                      Timecol = 'Time', Freqcol = 'Hz', Zcol = 'pow',
+                      Time_unit = 'ms', Freq_unit = 'Hz', Z_unit = 'dB',
+                      highlight = NA, x_breaks=NA, y_breaks=NA,
+                      precise_time = FALSE) {
+
+    # usually, there are some imprecisions, so smooth out the y and x axes
+    TF[, smooth_Time := seq(min(get(Timecol)), max(get(Timecol)), length.out = .N),
+       by = get(Freqcol)]
+    TF[, smooth_Hz := 1:.N, by = smooth_Time]
+
+    # create a function to look up labels that are true values, not smoothed
+    TimeTable <- TF[, .(Time = round(mean(get(Timecol)))), by = .(smooth_Time)]
+    FreqTable <- TF[, .(Hz = mean(get(Freqcol))), by = .(smooth_Hz)]
+    setattr(TimeTable, 'sorted', 'smooth_Time')
+    setattr(FreqTable, 'sorted', 'smooth_Hz')
+
+
+    true_x_labels <- function(i) {
+      setkey(TimeTable, smooth_Time)
+      as.character(round(
+        sapply(i, function(x) TimeTable[J(x), roll = 'nearest'][, Time])
+      ))
+    }
+    true_y_labels <- function(i) {
+      setkey(FreqTable, smooth_Hz)
+      as.character(round(
+        sapply(i, function(x) FreqTable[J(x), roll = 'nearest'][, Hz])
+      ), 1)
+    }
+
+    # use a matlab-like color palette
+    matlab.jet <- colorRamps::matlab.like(7)
+
+    plt <- ggplot(TF) +
+      aes(x = smooth_Time, y = smooth_Hz, z = get(Zcol), fill = get(Zcol)) +
+      geom_raster(interpolate = do_interpolate) +
+      scale_fill_gradientn(colors = matlab.jet, limits = zlim,
+                           oob = scales::squish, name = Z_unit) +
+      ggthemes::theme_tufte() +
+      xlab(paste0('Time [', Time_unit, ']')) +
+      ylab(Freq_unit)
+
+    ## take care of Frequency axis
+    # custom breaks
+    if (!is.na(y_breaks[1])) {
+      setkey(FreqTable, Hz)
+      y_breaks = FreqTable[J(y_breaks), roll = 'nearest'][, smooth_Hz]
+      plt <- plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels,
+                                      breaks = y_breaks)
+    } else {
+      # no custom breaks
+      plt <-plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels)
+    }
+
+    ## Take care of Time axis
+    if (!is.na(x_breaks[1]) & precise_time) {
+      setkey(TimeTable, Time)
+      x_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
+      plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels,
+                                      breaks = x_breaks)
+    } else if(!is.na(x_breaks[1]) & !precise_time) {
+      setkey(TimeTable, Time)
+      x_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
+      plt <- plt + scale_x_continuous(expand = c(0,0), breaks = x_breaks)
+    } else if(is.na(x_breaks[1]) & precise_time) {
+      plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels)
+    } else {
+      plt <- plt + scale_x_continuous(expand = c(0,0))
+    }
+
+    ## take care of contour
+    if (contours) {
+      plt <- plt + geom_contour(color = "white", alpha = 0.5)
+    }
+
+    ## highlight area
+    if (!is.na(highlight[1])) {
+      h = highlight
+      setkey(FreqTable, Hz)
+      h[1] = FreqTable[J(h[1]), roll = 'nearest'][, smooth_Hz]
+      h[2] = FreqTable[J(h[2]), roll = 'nearest'][, smooth_Hz]
+      setkey(TimeTable, Time)
+      h[3] = TimeTable[J(h[3]), roll = 'nearest'][, smooth_Time]
+      h[4] = TimeTable[J(h[4]), roll = 'nearest'][, smooth_Time]
+      #highlight should be c(Freq1, Freq2, Time1, Time2)
+      plt <- plt + geom_rect(aes(ymin = h[1], ymax = h[2], xmin = h[3],
+                                 xmax = h[4]), inherit.aes = FALSE,
+                             colour = 'white', fill = 'transparent',
+                             lwd = 1)
+
+    }
+    return(plt)
+  }
