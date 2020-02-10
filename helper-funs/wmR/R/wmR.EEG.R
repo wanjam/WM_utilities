@@ -47,6 +47,8 @@
 ##' imprecisions on the time axis. For instance, the smoothed axis might display
 ##'  "1000ms", whereas this datum is actually "1001.2ms". If you set this
 ##'  parameter to TRUE, you'll see the true time axis (default: FALSE).
+##' @param x_labs only if x_breaks is given and precise_time is FALSE. Define
+##' a string vector with labels corresponding to x_breaks.
 ##' @return a \code{ggplot} object
 ##' @examples
 ##' library(data.table)
@@ -68,94 +70,99 @@
 TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
                       Timecol = 'Time', Freqcol = 'Hz', Zcol = 'pow',
                       Time_unit = 'ms', Freq_unit = 'Hz', Z_unit = 'dB',
-                      highlight = NA, x_breaks=NA, y_breaks=NA,
-                      precise_time = FALSE) {
+                      highlight = NA, x_breaks = NA, y_breaks = NA,
+                      precise_time = FALSE, x_labs = NA) {
 
-    # usually, there are some imprecisions, so smooth out the y and x axes
-    TF[, smooth_Time := seq(min(get(Timecol)), max(get(Timecol)), length.out = .N),
-       by = get(Freqcol)]
-    TF[, smooth_Hz := 1:.N, by = smooth_Time]
+  # usually, there are some imprecisions, so smooth out the y and x axes
+  TF[, smooth_Time := seq(min(get(Timecol)), max(get(Timecol)), length.out = .N),
+     by = get(Freqcol)]
+  TF[, smooth_Hz := 1:.N, by = smooth_Time]
 
-    # create a function to look up labels that are true values, not smoothed
-    TimeTable <- TF[, .(Time = round(mean(get(Timecol)))), by = .(smooth_Time)]
-    FreqTable <- TF[, .(Hz = mean(get(Freqcol))), by = .(smooth_Hz)]
-    setattr(TimeTable, 'sorted', 'smooth_Time')
-    setattr(FreqTable, 'sorted', 'smooth_Hz')
+  # create a function to look up labels that are true values, not smoothed
+  TimeTable <- TF[, .(Time = round(mean(get(Timecol)))), by = .(smooth_Time)]
+  FreqTable <- TF[, .(Hz = mean(get(Freqcol))), by = .(smooth_Hz)]
+  setattr(TimeTable, 'sorted', 'smooth_Time')
+  setattr(FreqTable, 'sorted', 'smooth_Hz')
 
 
-    true_x_labels <- function(i) {
-      setkey(TimeTable, smooth_Time)
-      as.character(round(
-        sapply(i, function(x) TimeTable[J(x), roll = 'nearest'][, Time])
-      ))
-    }
-    true_y_labels <- function(i) {
-      setkey(FreqTable, smooth_Hz)
-      as.character(round(
-        sapply(i, function(x) FreqTable[J(x), roll = 'nearest'][, Hz])
-      ), 1)
-    }
-
-    # use a matlab-like color palette
-    matlab.jet <- colorRamps::matlab.like(7)
-
-    plt <- ggplot(TF) +
-      aes(x = smooth_Time, y = smooth_Hz, z = get(Zcol), fill = get(Zcol)) +
-      geom_raster(interpolate = do_interpolate) +
-      scale_fill_gradientn(colors = matlab.jet, limits = zlim,
-                           oob = scales::squish, name = Z_unit) +
-      ggthemes::theme_tufte() +
-      xlab(paste0('Time [', Time_unit, ']')) +
-      ylab(Freq_unit)
-
-    ## take care of Frequency axis
-    # custom breaks
-    if (!is.na(y_breaks[1])) {
-      setkey(FreqTable, Hz)
-      y_breaks = FreqTable[J(y_breaks), roll = 'nearest'][, smooth_Hz]
-      plt <- plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels,
-                                      breaks = y_breaks)
-    } else {
-      # no custom breaks
-      plt <-plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels)
-    }
-
-    ## Take care of Time axis
-    if (!is.na(x_breaks[1]) & precise_time) {
-      setkey(TimeTable, Time)
-      x_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
-      plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels,
-                                      breaks = x_breaks)
-    } else if(!is.na(x_breaks[1]) & !precise_time) {
-      setkey(TimeTable, Time)
-      x_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
-      plt <- plt + scale_x_continuous(expand = c(0,0), breaks = x_breaks)
-    } else if(is.na(x_breaks[1]) & precise_time) {
-      plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels)
-    } else {
-      plt <- plt + scale_x_continuous(expand = c(0,0))
-    }
-
-    ## take care of contour
-    if (contours) {
-      plt <- plt + geom_contour(color = "white", alpha = 0.5)
-    }
-
-    ## highlight area
-    if (!is.na(highlight[1])) {
-      h = highlight
-      setkey(FreqTable, Hz)
-      h[1] = FreqTable[J(h[1]), roll = 'nearest'][, smooth_Hz]
-      h[2] = FreqTable[J(h[2]), roll = 'nearest'][, smooth_Hz]
-      setkey(TimeTable, Time)
-      h[3] = TimeTable[J(h[3]), roll = 'nearest'][, smooth_Time]
-      h[4] = TimeTable[J(h[4]), roll = 'nearest'][, smooth_Time]
-      #highlight should be c(Freq1, Freq2, Time1, Time2)
-      plt <- plt + geom_rect(aes(ymin = h[1], ymax = h[2], xmin = h[3],
-                                 xmax = h[4]), inherit.aes = FALSE,
-                             colour = 'white', fill = 'transparent',
-                             lwd = 1)
-
-    }
-    return(plt)
+  true_x_labels <- function(i) {
+    setkey(TimeTable, smooth_Time)
+    as.character(round(
+      sapply(i, function(x) TimeTable[J(x), roll = 'nearest'][, Time])
+    ))
   }
+  true_y_labels <- function(i) {
+    setkey(FreqTable, smooth_Hz)
+    as.character(round(
+      sapply(i, function(x) FreqTable[J(x), roll = 'nearest'][, Hz])
+    ), 1)
+  }
+
+  # use a matlab-like color palette
+  matlab.jet <- colorRamps::matlab.like(7)
+
+  plt <- ggplot(TF) +
+    aes(x = smooth_Time, y = smooth_Hz, z = get(Zcol), fill = get(Zcol)) +
+    geom_raster(interpolate = do_interpolate) +
+    scale_fill_gradientn(colors = matlab.jet, limits = zlim,
+                         oob = scales::squish, name = Z_unit) +
+    ggthemes::theme_tufte() +
+    xlab(paste0('Time [', Time_unit, ']')) +
+    ylab(Freq_unit)
+
+  ## take care of Frequency axis
+  # custom breaks
+  if (!is.na(y_breaks[1])) {
+    setkey(FreqTable, Hz)
+    y_breaks = FreqTable[J(y_breaks), roll = 'nearest'][, smooth_Hz]
+    plt <- plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels,
+                                    breaks = y_breaks)
+  } else {
+    # no custom breaks
+    plt <-plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels)
+  }
+
+  ## Take care of Time axis
+  if (!is.na(x_breaks[1]) & precise_time) {
+    setkey(TimeTable, Time)
+    x_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
+    plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels,
+                                    breaks = x_breaks)
+  } else if(!is.na(x_breaks[1]) & !precise_time) {
+    # check if x_labs is defined
+    if (any(is.na(x_labs))) {
+      x_labs = x_breaks
+    }
+    setkey(TimeTable, Time)
+    x_true_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
+    plt <- plt + scale_x_continuous(expand = c(0,0), breaks = x_true_breaks,
+                                    labels = x_labs)
+  } else if(is.na(x_breaks[1]) & precise_time) {
+    plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels)
+  } else {
+    plt <- plt + scale_x_continuous(expand = c(0,0))
+  }
+
+  ## take care of contour
+  if (contours) {
+    plt <- plt + geom_contour(color = "white", alpha = 0.5)
+  }
+
+  ## highlight area
+  if (!is.na(highlight[1])) {
+    h = highlight
+    setkey(FreqTable, Hz)
+    h[1] = FreqTable[J(h[1]), roll = 'nearest'][, smooth_Hz]
+    h[2] = FreqTable[J(h[2]), roll = 'nearest'][, smooth_Hz]
+    setkey(TimeTable, Time)
+    h[3] = TimeTable[J(h[3]), roll = 'nearest'][, smooth_Time]
+    h[4] = TimeTable[J(h[4]), roll = 'nearest'][, smooth_Time]
+    #highlight should be c(Freq1, Freq2, Time1, Time2)
+    plt <- plt + geom_rect(aes(ymin = h[1], ymax = h[2], xmin = h[3],
+                               xmax = h[4]), inherit.aes = FALSE,
+                           colour = 'white', fill = 'transparent',
+                           lwd = 1)
+
+  }
+  return(plt)
+}

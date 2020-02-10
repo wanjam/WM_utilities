@@ -18,7 +18,8 @@ TF_ggplot(
   highlight = NA,
   x_breaks = NA,
   y_breaks = NA,
-  precise_time = FALSE
+  precise_time = FALSE,
+  x_labs = NA
 )
 }
 \arguments{
@@ -60,6 +61,9 @@ approximate and round internally.}
 imprecisions on the time axis. For instance, the smoothed axis might display
  "1000ms", whereas this datum is actually "1001.2ms". If you set this
  parameter to TRUE, you'll see the true time axis (default: FALSE).}
+
+\item{x_labs}{only if x_breaks is given and precise_time is FALSE. Define
+a string vector with labels corresponding to x_breaks.}
 }
 \value{
 a \code{ggplot} object
