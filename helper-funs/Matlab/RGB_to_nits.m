@@ -4,7 +4,7 @@ function [nits, sRGB] = RGB_to_nits(RGB, CLUT, i1correctedLumi, i1correctedInt)
 % ONLY WORKS FOR GRAYSCALE (i.e., all 3 RGB values are the same!)
 %
 % Input:
-%   RGB = 1x3 double RGB vector; can be sRGB
+%   RGB = 1x3 double RGB vector; can be sRGB (values should be 0-255 or 0-1)
 %   CLUT = 256x3 double matrix; the CLUT used in experiment (only if sRGB
 %          desired, else leave empty []);
 %   i1correctedLumi = Nx1 double matrix; the Luminance measurements taken
@@ -57,6 +57,6 @@ if ~all(RGB == RGB(1))
 end
 
 % indexing does not start at 0 but at 1
-nits = interpNits(RGB(1));
+nits = interpNits(RGB(1) + 1);
 
 end
