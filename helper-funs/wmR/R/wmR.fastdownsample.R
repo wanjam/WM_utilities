@@ -132,7 +132,6 @@ fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE,
                 '\nIf you don\'t have trials, simply run pddt[,Trial:=1].',
                 '\nIf you do have trials, run pddt[,Trial=YourTrialColumnName]'))
   }
-  browser()
   non.average.columns <- c(non.average.columns, 'DS', 'Trial')
   non.average.columns.na.rm <- c(non.average.columns.na.rm, 'DS', 'Trial')
   subsamples <- pddt.tmp[, .SD, .SDcols = non.average.columns]
