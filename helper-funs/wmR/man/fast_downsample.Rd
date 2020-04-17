@@ -2,11 +2,19 @@
 % Please edit documentation in R/wmR.fastdownsample.R
 \name{fast_downsample}
 \alias{fast_downsample}
-\title{Fast version of wmR::my_downsample. This version attemps to do the same
-(see below). However, it's *much faster*. Needs a column 'Trial', which can
+\title{Fast downsampling of eyetracking data. Originally based on pR::downsample
+However, it's *much faster* and can handle with more sorts of input
+(see below). Needs a column 'Trial', which can
 simply be **1** if it should be ignored.}
 \usage{
-fast_downsample(pddt, by, Hz = 100, useref = FALSE)
+fast_downsample(
+  pddt,
+  by,
+  Hz = 100,
+  useref = FALSE,
+  non.average.columns = c("TTL", "IthSaccadeThisSubject", "Blink", "Fixation",
+    "Saccade", "AverageVelocity", "PeakVelocity")
+)
 }
 \arguments{
 \item{pddt}{a pupil dilation \code{data.table} of a single participant containing at least the following
@@ -39,19 +47,24 @@ Returns a downsampled copy of the original \code{data.table} with the following 
 }
 }
 \description{
-my_downsample documentation:
+new documentation:
 }
 \details{
 Downsample pupil dilation data to a given frequency
 
-This is a slightly modified version of pR::downsample (see github.com/hedderik/pR).
+This is a modified version of pR::downsample (see github.com/hedderik/pR).
 In comparison to the original, this version can process additional information
-as captured on-line by the eyetracker. In detail, that is:
+as captured on-line by the eyetracker. For example:
 - TTL trigger sent to the SR-host-PC
 - Saccades
 - Blinks
 - Fixations
 - Velocity
+
+Please indicate all columns that are not always the same within a trial
+(i.e., that cannot go into the "by" argument) and that should not be averaged
+over (i.e., not X, Y, or Dil) in \code{non.average.columns}.
+ Typically, that's saccade, ttl, blink, and fixation statistics.
 
 ----------------------------------
 Original documentation

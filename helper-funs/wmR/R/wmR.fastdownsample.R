@@ -14,22 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-##' Fast version of wmR::my_downsample. This version attemps to do the same
-##' (see below). However, it's *much faster*. Needs a column 'Trial', which can
+##' Fast downsampling of eyetracking data. Originally based on pR::downsample
+##' However, it's *much faster* and can handle with more sorts of input
+##' (see below). Needs a column 'Trial', which can
 ##' simply be **1** if it should be ignored.
 ##'
-##' my_downsample documentation:
+##' new documentation:
 ##'
 ##' Downsample pupil dilation data to a given frequency
 ##'
-##' This is a slightly modified version of pR::downsample (see github.com/hedderik/pR).
+##' This is a modified version of pR::downsample (see github.com/hedderik/pR).
 ##' In comparison to the original, this version can process additional information
-##' as captured on-line by the eyetracker. In detail, that is:
+##' as captured on-line by the eyetracker. For example:
 ##' - TTL trigger sent to the SR-host-PC
 ##' - Saccades
 ##' - Blinks
 ##' - Fixations
 ##' - Velocity
+##'
+##'Please indicate all columns that are not always the same within a trial
+##'(i.e., that cannot go into the "by" argument) and that should not be averaged
+##' over (i.e., not X, Y, or Dil) in \code{non.average.columns}.
+##'  Typically, that's saccade, ttl, blink, and fixation statistics.
 ##'
 ##' ----------------------------------
 ##' Original documentation
@@ -71,12 +77,15 @@
 ##' @export fast_downsample
 ##' @import data.table
 ##' @importFrom stats median
-fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE) {
+fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE,
+                            non.average.columns = c('TTL', 'IthSaccadeThisSubject', 'Blink',
+                                                    'Fixation', 'Saccade', 'AverageVelocity', 'PeakVelocity')) {
   if (!useref) {
   pddt.tmp <- copy(pddt) # avoid overwriting global variable
   } else {
     pddt.tmp <- pddt
   }
+  ## determine sampling frequency
   sampleTime <- pddt.tmp[, Time[2] - Time[1]]
   binSize <- 1000 / Hz
   if (binSize %% sampleTime != 0) {
@@ -86,6 +95,7 @@ fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE) {
   ## Downsample ----
   pddt.tmp[, DS := Time %/% binSize]
   setorder(pddt.tmp, Trial, DS, Time)
+  # add 'DS' to the list of values we want to reduce the data.table by
   allF <- c(by, "DS")
 
   ## Do our downsampling per group of cells defined by the combination of the by
@@ -98,8 +108,8 @@ fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE) {
                 '\nIf you don\'t have trials, simply run pddt[,Trial:=1].',
                 '\nIf you do have trials, run pddt[,Trial=YourTrialColumnName]'))
   }
-  subsamples <- pddt.tmp[,.(TTL, IthSaccadeThisSubject, Blink, Fixation, Saccade,
-                        AverageVelocity, PeakVelocity, Trial, DS)]
+  non.average.columns <- c(non.average.columns, 'DS', 'Trial')
+  subsamples <- pddt.tmp[, .SD, .SDcols = non.average.columns]
   setorder(subsamples, Trial, DS)
   Nsubsamples <- subsamples[,.SD[.N],by = .(Trial, DS)]
   setorder(Nsubsamples, Trial, DS)

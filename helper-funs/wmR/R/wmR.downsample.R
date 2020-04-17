@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+##' NOT ACTIVELY MAINTAINED -- CONSIDER wmR::fast_downsample
 ##' Downsample pupil dilation data to a given frequency
 ##'
 ##' This is a slightly modified version of pR::downsample (see github.com/hedderik/pR).
@@ -65,6 +66,7 @@
 ##' @import data.table
 ##' @importFrom stats median
 my_downsample <- function(pddt, by, Hz = 100) {
+  warning('this function is not maintained anymore. Please consider wmR::fast_downsample instead')
   pddt.tmp <- copy(pddt)
   sampleTime <- pddt.tmp[, Time[2] - Time[1]]
   binSize <- 1000 / Hz

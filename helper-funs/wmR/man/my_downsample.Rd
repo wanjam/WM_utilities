@@ -2,7 +2,8 @@
 % Please edit documentation in R/wmR.downsample.R
 \name{my_downsample}
 \alias{my_downsample}
-\title{Downsample pupil dilation data to a given frequency}
+\title{NOT ACTIVELY MAINTAINED -- CONSIDER wmR::fast_downsample
+Downsample pupil dilation data to a given frequency}
 \usage{
 my_downsample(pddt, by, Hz = 100)
 }
