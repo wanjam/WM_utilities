@@ -1,7 +1,7 @@
 Package: wmR
 Type: Package
 Title: Collection of functions I (Wanja Moessing) frequently use
-Version: 1.0.0
+Version: 1.0.1
 Author: Wanja Moessing
 Maintainer: Wanja Moessing <moessing@wwu.de>
 URL: https://go.wwu.de/buschlab
@@ -10,11 +10,20 @@ Description: Only use this if you know what you're doing!
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
-Depends: R (>= 3.6)
-Imports: afex (>= 0.19-1),
-    CircStats (>= 0.2-4),
-    data.table (>= 1.10.4-3),
-    ggplot2 (>= 2.2.1),
-    pracma (>= 2.1.4),
-    Rmisc (>= 1.5.0)
+RoxygenNote: 7.1.0
+Imports: 
+    assertthat (>= 0.2.1),
+    CircStats (>= 0.2.6),
+    colorRamps (>= 2.3),
+    data.table (>= 1.12.8),
+    ggplot2 (>= 3.3.0),
+    ggthemes (>= 4.2.0),
+    pracma (>= 2.2.9),
+    Rmisc (>= 1.5.0),
+    scales (>= 1.1.0),
+    stats (>= 3.6.2),
+    utils (>= 3.6.2),
+    stringr (>= 1.4.0),
+    afex (>= 0.25.1),
+    BayesFactor (>= 0.9.12.4.2),
+    collapse (>= 1.1.0)

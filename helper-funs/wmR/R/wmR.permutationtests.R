@@ -50,7 +50,7 @@
 ##' larger mean than the other group.
 ##' @examples
 ##' # create fake data
-##' libraries(data.table, ggplot)
+##' libraries(data.table, ggplot2)
 ##' data = data.table()
 ##' for (id in 1:10){
 ##'   data = rbind(data, data.table(mV = rnorm(4000, 2, 0.5),
@@ -73,8 +73,8 @@
 ##' @name TimeSeriesPermutationTest
 ##' @export TimeSeriesPermutationTest
 ##' @seealso t.test
-##' @import data.table
-##' @import assertthat
+##' @import data.table assertthat utils
+##' @importFrom data.table data.table
 TimeSeriesPermutationTest <- function(data, condCol='condition', dataCol='mV',
                                       idCol = 'ID', timeCol='Time',
                                       nperm = 1000, altrntv="two.sided",

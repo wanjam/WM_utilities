@@ -65,8 +65,15 @@
 ##' @export my_downsample
 ##' @import data.table
 ##' @importFrom stats median
+##' @importFrom data.table data.table
 my_downsample <- function(pddt, by, Hz = 100) {
   warning('this function is not maintained anymore. Please consider wmR::fast_downsample instead')
+
+  # take care of "no visible binding" warnings related to data.table syntax (see https://github.com/Rdatatable/data.table/issues/850)
+  #Dil = X = Y = TTL = IthSaccadeThisSubject = Blink = Fixation = NULL
+  #Saccade = AverageVelocity = PeakVelocity = Time = DS = NULL
+
+
   pddt.tmp <- copy(pddt)
   sampleTime <- pddt.tmp[, Time[2] - Time[1]]
   binSize <- 1000 / Hz
@@ -95,6 +102,7 @@ my_downsample <- function(pddt, by, Hz = 100) {
   return(pddt.tmp)
 }
 
+.datatable.aware = TRUE
 
 #' @title my_mode
 #' @description only for internal use in my_downsample

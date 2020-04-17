@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-##' Fast downsampling of eyetracking data. Originally based on pR::downsample
+##' @title fast_downsample
+##' @description Fast downsampling of eyetracking data. Originally based on pR::downsample
 ##' However, it's *much faster* and can handle with more sorts of input
-##' (see below). Needs a column 'Trial', which can
-##' simply be **1** if it should be ignored.
+##' (see below). Downsampling is done via computing bin-wise medians.
+##' This is a very simple solution, but one that is appropriate, given the slow
+##' pupil response -- as long as the output frequency is sufficiently high.
+##'
 ##'
 ##' new documentation:
 ##'
@@ -32,19 +35,10 @@
 ##' - Fixations
 ##' - Velocity
 ##'
-##'Please indicate all columns that are not always the same within a trial
-##'(i.e., that cannot go into the "by" argument) and that should not be averaged
+##' Please indicate all columns that are not always the same within a trial
+##' (i.e., that cannot go into the "by" argument) and that should not be averaged
 ##' over (i.e., not X, Y, or Dil) in \code{non.average.columns}.
-##'  Typically, that's saccade, ttl, blink, and fixation statistics.
-##'
-##' ----------------------------------
-##' Original documentation
-##' ----------------------------------
-##'
-##' Downsamples the data in the pupil dilation \code{data.table} to a given frequency by calculating the \code{\link{median}}
-##' values for subsequent bins. This is the simplest type of downsampling possible, but one that - given the slow
-##' pupillary response - is appropriate as long as the output frequency is sufficiently high. Furture work might
-##' incorporate more refined sampling methods as defined in the \code{signal} package.
+##' Typically, that's saccade, ttl, blink, and fixation statistics.
 ##'
 ##' @param pddt a pupil dilation \code{data.table} of a single participant containing at least the following
 ##' four columns:
@@ -53,14 +47,32 @@
 ##' \item{X} X coordinate of the eye associated with each sample
 ##' \item{Y} Y coordinate of the eye associated with each sample
 ##' \item{Time} time stamp in ms associated with each sample
-##' \item{Trial} indicating to which trial the current sample belongs
+##' \item{Trial} indicating to which trial the current sample belongs. If your data has no trials, create a column \code{Trial} and set all rows to \code{1}
 ##' }
-##' @param by a vector of character names of the columns defining unique trials. As the returned \code{data.table}
-##' only contains the columns listed above and the columns specified in this \code{by} argument, typically the
-##' \code{by} parameter also contains the names of the columns containing condition and participant information.
+##' @param by a vector of character names of the columns defining unique trials.
+##' This should contain all columns that (i) have just one unique value per trial
+##' (e.g., stimulus_image, response_correct, RT, etc.), and that (ii) should be
+##' included in the final dataset. Use \code{non.average.colums} to indicate
+##' other factors.
+##'
+##' @param non.average.columns a vector of column names. This is especially useful
+##' to integrate blink/saccade/fixation/ttl statistics as included in Eyelink's
+##' EDF files. For each column, the most frequent value is returned to the bin in
+##' the resulting data.table. For columns coding blinks/saccades/fixations as
+##' logicals, make sure they are NA whenever not happening.
+##'
+##' @param non.average.columns.na.rm same as \code{non.average.columns}, with the
+##' difference that NAs are ignored. This is especially useful for TTL triggers.
+##' The TTL column is likely mostly NA and has just very few TTLs. You don't want
+##' to lose that information, but instead you want to have that trigger assigned
+##' to the bin.
+##'
 ##'
 ##' @param Hz target Hz
-##' @param useref boolean (default: FALSE). Can be set TRUE to squeeze the last bit of performance out of it. Only do so if you're absolutely sure you don't mind your original pddt-data.table to be messed with.
+##' @param useref boolean (default: FALSE). Defines whether internally a
+##' \code{copy()} of data.table is used, or the original data.table by reference.
+##' Can be set TRUE to squeeze the last bit of performance out of it.
+##' Only do so if you're absolutely sure you don't mind your original pddt-data.table to be messed with.
 ##'
 ##' @return Returns a downsampled copy of the original \code{data.table} with the following columns:
 ##' \itemize{
@@ -71,17 +83,29 @@
 ##' \item{\code{Trial}} indicating to which trial this downsampled sample belongs
 ##' \item{\code{...}} all columns listed in the \code{by} argument.
 ##' }
+##' @examples
+##' \dontrun{
+##' foo = colnames(samples)
+##' non.average.columns = foo[foo %like% '(^(sacc|fix|blink|event))']
+##' BY = foo[!(foo %in% c('Dil', 'X', 'Y', 'Flags', 'DilDiff', 'TTL',
+##'                      'RelTime', 'Baseline','Time','ID',
+##'                      non.average.columns))]
 ##'
-##' @author Hedderik van Rijn, Jacolien van Rij, (modifications) Wanja Mössing
+##' samples <- fast_downsample(samples, by = BY, Hz = 100, useref = TRUE)
+##' }
+##' @author (2020) Wanja Mössing; basis: Jacolien van Rij, Hedderik van Rijn
 ##' @name fast_downsample
 ##' @export fast_downsample
 ##' @import data.table
 ##' @importFrom stats median
+##' @importFrom collapse fmode
 fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE,
-                            non.average.columns = c('TTL', 'IthSaccadeThisSubject', 'Blink',
-                                                    'Fixation', 'Saccade', 'AverageVelocity', 'PeakVelocity')) {
+                            non.average.columns = c('IthSaccadeThisSubject',
+                                                    'Blink', 'Fixation',
+                                                    'Saccade', 'avel', 'pvel'),
+                            non.average.columns.na.rm = 'TTL') {
   if (!useref) {
-  pddt.tmp <- copy(pddt) # avoid overwriting global variable
+    pddt.tmp <- copy(pddt) # avoid overwriting global variable
   } else {
     pddt.tmp <- pddt
   }
@@ -108,13 +132,22 @@ fast_downsample <- function(pddt, by, Hz = 100, useref = FALSE,
                 '\nIf you don\'t have trials, simply run pddt[,Trial:=1].',
                 '\nIf you do have trials, run pddt[,Trial=YourTrialColumnName]'))
   }
+  browser()
   non.average.columns <- c(non.average.columns, 'DS', 'Trial')
+  non.average.columns.na.rm <- c(non.average.columns.na.rm, 'DS', 'Trial')
   subsamples <- pddt.tmp[, .SD, .SDcols = non.average.columns]
+  subsamples.na.rm <- pddt.tmp[, .SD, .SDcols = non.average.columns.na.rm]
   setorder(subsamples, Trial, DS)
-  Nsubsamples <- subsamples[,.SD[.N],by = .(Trial, DS)]
+  setorder(subsamples.na.rm, Trial, DS)
+  # for each bin, select the most frequent value, including NAs
+  # collapse::fmode slows the whole function down considerably - there should be
+  # a faster version, but it's not data.table::fsort
+  Nsubsamples <- subsamples[, lapply(.SD, collapse::fmode, na.rm = F), by = .(Trial, DS)]
+  Nsubsamples.na.rm <- subsamples.na.rm[, lapply(.SD, collapse::fmode, na.rm = T), by = .(Trial, DS)]
+  Nsubsamples <- merge(Nsubsamples, Nsubsamples.na.rm, by = c('Trial', 'DS'))
   setorder(Nsubsamples, Trial, DS)
-  downsamplecols <- c('Dil', 'X', 'Y')
-  pddt.tmp <- pddt.tmp[, .(Dil = median(Dil), X = median(X), Y = median(Y)), by = allF]
+  dscols <- c('Dil', 'X', 'Y')
+  pddt.tmp <- pddt.tmp[, lapply(.SD, median), by = allF, .SDcols = dscols]
   pddt.tmp <- merge(pddt.tmp, Nsubsamples, by = c('Trial','DS'))
 
   ## Recreate a Time column with time in ms, and remove the column on which the split the data.

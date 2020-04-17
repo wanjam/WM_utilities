@@ -9,7 +9,11 @@
 \alias{.doSummarySEwithin}
 \alias{.datasetupSEwithin}
 \title{Add layer with Cosineau-Morey 95\% within group CIs/ SE to ggplot}
-\format{An object of class \code{CosiMoreCIs} (inherits from \code{Stat}, \code{ggproto}, \code{gg}) of length 6.}
+\format{
+An object of class \code{CosiMoreCIs} (inherits from \code{Stat}, \code{ggproto}, \code{gg}) of length 6.
+
+An object of class \code{CosiMoreSEs} (inherits from \code{Stat}, \code{ggproto}, \code{gg}) of length 6.
+}
 \usage{
 stat_CosineauMoreyCI(
   mapping = NULL,
@@ -66,6 +70,10 @@ Default is 'pointrange', 'errorbar' works fine as well.}
 \item{conf.interval}{default is 0.95}
 
 \item{...}{further arguments passed to geom}
+
+\item{cise}{(used internally)}
+
+\item{scales}{(used internally)}
 }
 \value{
 a ggplot layer with errorbars

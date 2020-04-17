@@ -29,7 +29,7 @@
 ##' @name fair_distribution
 ##' @export fair_distribution
 ##' @import data.table
-##'
+##' @importFrom data.table data.table
 fair_distribution <- function(DT){
   # DT should be a data.table with each column representing 1 group and each row showing their choices in descending order (integers)
   # sanity checks

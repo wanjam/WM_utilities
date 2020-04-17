@@ -14,56 +14,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#' @title CO16_FIT
-#' @description This is a ported version of Paul Bays' Matlab code published at http://www.paulbays.com/code/CO16/
-#'   ----------------------------------
-#'   Original documentation
-#'   ----------------------------------
-#'
-#'   This code is released under a GNU General Public License:
-#'   feel free to use and adapt these functions as you like, but credit should be given to Paul Bays if they contribute to your work, by citing:
-#'   Schneegans S & Bays PM. No fixed item limit in visuospatial working memory. Cortex 83: 181-193 (2016)
-#'
-#'   Returns maximum likelihood parameters B (res[1]) for a mixture model describing
-#'   recall responses X in terms of target TT, non-target NT, and uniform
-#'   responses. Inputs should be in radians, -\code{pi} <= X < \code{pi}. Fitting is based
-#'   on an EM algorithm with multiple starting parameters.
-#'
-#'   \code{CO16_fit(X, TT, NT)} returns a three-element list with:
-#'   1. vector \code{B c(K, pT, pN, pU)}, where K is
-#'     the concentration parameter of a Von Mises distribution capturing
-#'     response variability, pT is the probability of responding with the
-#'     target value, pN the probability of responding with a non-target
-#'     value, and pU the probability of responding "randomly".
-#'
-#'   2. vector \code{LL} additionally returns the log likelihood LL.
-#'
-#'   3. vector \code{W} additionally returns a weight matrix of
-#'     trial-by-trial posterior probabilities that responses come from each of
-#'     the three mixture components. Each row of W corresponds to a separate
-#'     trial and is of the form \code{c(wT, wN, wU)}, corresponding to the probability
-#'     the response comes from the target, non-target or uniform response
-#'     distributions, respectively.
-#'
-#' @references Schneegans S & Bays PM. No fixed item limit in visuospatial working
-#'   memory. Cortex 83: 181-193 (2016),
-#'   Bays PM, Catalao RFG & Husain M. The precision of visual working
-#'   memory is set by allocation of a shared resource. Journal of Vision
-#'   9(10): 7, 1-11 (2009)
-#'
-#' @author Paul Bays, R port by Wanja Moessing
-#' @param X [n*1,1] vector of responses **or** data.table containing columns
-#' with responses, targets and non-targets
-#' @param TT [n*1,1] column vector of Target orientations
-#' @param NT [n*1, m] matrix of non-target values
-#' @param ... optional input arguments passed to \code{DT2CO16}, in case
-#' \code{X} is a \code{data.table}.
-#' @seealso DT2CO16
-#' @name  CO16_fit
-#' @export CO16_fit
-#' @importFrom pracma size repmat ones zeros
-#' @importFrom CircStats A1inv
-#' @import data.table
+##' @title CO16_FIT
+##' @description This is a ported version of Paul Bays' Matlab code published at http://www.paulbays.com/code/CO16/
+##'   ----------------------------------
+##'   Original documentation
+##'   ----------------------------------
+##'
+##'   This code is released under a GNU General Public License:
+##'   feel free to use and adapt these functions as you like, but credit should be given to Paul Bays if they contribute to your work, by citing:
+##'   Schneegans S & Bays PM. No fixed item limit in visuospatial working memory. Cortex 83: 181-193 (2016)
+##'
+##'   Returns maximum likelihood parameters B (res[1]) for a mixture model describing
+##'   recall responses X in terms of target TT, non-target NT, and uniform
+##'   responses. Inputs should be in radians, -\code{pi} <= X < \code{pi}. Fitting is based
+##'   on an EM algorithm with multiple starting parameters.
+##'
+##'   \code{CO16_fit(X, TT, NT)} returns a three-element list with:
+##'   1. vector \code{B c(K, pT, pN, pU)}, where K is
+##'     the concentration parameter of a Von Mises distribution capturing
+##'     response variability, pT is the probability of responding with the
+##'     target value, pN the probability of responding with a non-target
+##'     value, and pU the probability of responding "randomly".
+##'
+##'   2. vector \code{LL} additionally returns the log likelihood LL.
+##'
+##'   3. vector \code{W} additionally returns a weight matrix of
+##'     trial-by-trial posterior probabilities that responses come from each of
+##'     the three mixture components. Each row of W corresponds to a separate
+##'     trial and is of the form \code{c(wT, wN, wU)}, corresponding to the probability
+##'     the response comes from the target, non-target or uniform response
+##'     distributions, respectively.
+##'
+##' @references Schneegans S & Bays PM. No fixed item limit in visuospatial working
+##'   memory. Cortex 83: 181-193 (2016),
+##'   Bays PM, Catalao RFG & Husain M. The precision of visual working
+##'   memory is set by allocation of a shared resource. Journal of Vision
+##'   9(10): 7, 1-11 (2009)
+##'
+##' @author Paul Bays, R port by Wanja Moessing
+##' @param X [n*1,1] vector of responses **or** data.table containing columns
+##' with responses, targets and non-targets
+##' @param TT [n*1,1] column vector of Target orientations
+##' @param NT [n*1, m] matrix of non-target values
+##' @param ... optional input arguments passed to \code{DT2CO16}, in case
+##' \code{X} is a \code{data.table}.
+##' @seealso DT2CO16
+##' @name  CO16_fit
+##' @export CO16_fit
+##' @importFrom pracma size repmat ones zeros
+##' @importFrom CircStats A1inv
+##' @import data.table
+##' @importFrom data.table data.table
+##'
 CO16_fit <- function(X, TT = NULL, NT=NULL, ...) {
   # allow to input a data.table; at some point, the whole thing should be ported to data.table sytax
   if (is.data.table(X)) {

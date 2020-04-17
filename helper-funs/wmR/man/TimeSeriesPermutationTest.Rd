@@ -67,7 +67,7 @@ larger mean than the other group.
 }
 \examples{
 # create fake data
-libraries(data.table, ggplot)
+libraries(data.table, ggplot2)
 data = data.table()
 for (id in 1:10){
   data = rbind(data, data.table(mV = rnorm(4000, 2, 0.5),

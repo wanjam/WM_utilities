@@ -59,14 +59,10 @@
 ##'
 ##' @author Wanja Mössing
 ##' @name TF_ggplot
-##' @export TF_ggplot
 ##' @seealso ggplot, geom_raster
-##' @import data.table
-##' @import ggplot2
-##' @import colorRamps
-##' @import scales
-##' @import ggthemes
-##'
+##' @import data.table ggplot2 colorRamps scales ggthemes
+##' @export TF_ggplot
+##' @importFrom data.table data.table
 TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
                       Timecol = 'Time', Freqcol = 'Hz', Zcol = 'pow',
                       Time_unit = 'ms', Freq_unit = 'Hz', Z_unit = 'dB',
@@ -119,7 +115,7 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
                                     breaks = y_breaks)
   } else {
     # no custom breaks
-    plt <-plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels)
+    plt <- plt + scale_y_continuous(expand = c(0,0), labels = true_y_labels)
   }
 
   ## Take care of Time axis
@@ -128,7 +124,7 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
     x_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
     plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels,
                                     breaks = x_breaks)
-  } else if(!is.na(x_breaks[1]) & !precise_time) {
+  } else if (!is.na(x_breaks[1]) & !precise_time) {
     # check if x_labs is defined
     if (any(is.na(x_labs))) {
       x_labs = x_breaks
@@ -137,7 +133,7 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
     x_true_breaks = TimeTable[J(x_breaks), roll = 'nearest'][, smooth_Time]
     plt <- plt + scale_x_continuous(expand = c(0,0), breaks = x_true_breaks,
                                     labels = x_labs)
-  } else if(is.na(x_breaks[1]) & precise_time) {
+  } else if (is.na(x_breaks[1]) & precise_time) {
     plt <- plt + scale_x_continuous(expand = c(0,0), labels = true_x_labels)
   } else {
     plt <- plt + scale_x_continuous(expand = c(0,0))

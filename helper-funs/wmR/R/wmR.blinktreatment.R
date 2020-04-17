@@ -51,6 +51,7 @@
 ##' @name blink.detect
 ##' @export blink.detect
 ##' @import data.table
+##' @importFrom data.table data.table
 blink.detect <- function(pddt, minDilation = 500, maxDeltaDilation = 5,
                          TrialCol = 'Trial', SR_Blink_Col = NA,
                          use_SR = FALSE, verbose = TRUE, expandblinks = 0) {

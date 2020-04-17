@@ -33,7 +33,7 @@
 ##' @author Wanja Mössing
 ##' @name computername
 ##' @export computername
-##'
+##' @importFrom data.table data.table
 computername <- function(){
   return(as.character(Sys.info()['nodename']))
 }
