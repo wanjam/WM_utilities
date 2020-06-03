@@ -12,8 +12,8 @@ currently containing:
   * makes life easier by including the most regular routines in just a few
     functions of the kind 'startingroutines'...experiment...'stopping routines'
   * also includes wrappers to get the current gaze position
-* Code to read-in Biosemi .bdf files that have a 16bit event channel, that
-  consists of two seperate 8-bit streams of input.
+* ~Code to read-in Biosemi .bdf files that have a 16bit event channel, that
+  consists of two seperate 8-bit streams of input.~ (06/2020: moved & updated; see github.com/wanjam/fileio)
   * this is just an adaptation of eeglabs pop_fileio and fieldtrips ft_read_header
   * it's based on the files from eeglab 13_6_5b, so if the authors change stuff in future versions, that might cause trouble.
 * Caplayout files for our 128-electrode Biosemi caps
