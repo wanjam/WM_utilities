@@ -16,7 +16,7 @@ Imports:
     CircStats (>= 0.2.6),
     colorRamps (>= 2.3),
     data.table (>= 1.12.8),
-    ggplot2 (>= 3.3.0),
+    ggplot2 (>= 3.1.0),
     ggthemes (>= 4.2.0),
     pracma (>= 2.2.9),
     Rmisc (>= 1.5.0),
