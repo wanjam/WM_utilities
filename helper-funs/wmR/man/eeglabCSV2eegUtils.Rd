@@ -44,7 +44,7 @@ CRAN. Use \code{remotes::install_github("craddm/eegUtils")} instead.
 }
 \examples{
 # Matlab first, R below
-\dotrun{
+\dontrun{
 #\%\%\%\%\% EXPORTING IN MATLAB \%\%\%\%\% (usage in R below)
 # EEG.bsldata are baselined data (64x1900x30; chan x time x id)
 # stack the third dimension, so this becomes 2D
