@@ -1,7 +1,7 @@
 Package: wmR
 Type: Package
 Title: Collection of functions I (Wanja Moessing) frequently use
-Version: 1.0.5
+Version: 1.0.6
 Author: Wanja Moessing
 Maintainer: Wanja Moessing <w.a.moessing@gmail.com>
 URL: https://go.wwu.de/buschlab
@@ -27,3 +27,8 @@ Imports:
     afex (>= 0.25.1),
     BayesFactor (>= 0.9.12.4.2),
     collapse (>= 1.1.0)
+Remotes: 
+    github::hedderik/pR
+    github::hedderik/hvR
+    github::craddm/eegUtils
+    github::jashubbard/edfR
