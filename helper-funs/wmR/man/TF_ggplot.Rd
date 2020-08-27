@@ -19,7 +19,9 @@ TF_ggplot(
   x_breaks = NA,
   y_breaks = NA,
   precise_time = FALSE,
-  x_labs = NA
+  x_labs = NA,
+  highcol = "white",
+  fill_palette = "matlab.like"
 )
 }
 \arguments{
@@ -64,6 +66,13 @@ imprecisions on the time axis. For instance, the smoothed axis might display
 
 \item{x_labs}{only if x_breaks is given and precise_time is FALSE. Define
 a string vector with labels corresponding to x_breaks.}
+
+\item{highcol}{color of highlight rectangle (default: 'white')}
+
+\item{fill_palette}{palette used for plotting, can be anything passed to
+`scale_fill_distiller`''s `palette` argument. 'magma', 'inferno', 'plasma',
+'viridis', and 'cividis' use `scale_fill_viridis_c`. Default is a matlab-like
+scale created with colorRamps and `scale_fill_gradientn` ('matlab.like').}
 }
 \value{
 a \code{ggplot} object

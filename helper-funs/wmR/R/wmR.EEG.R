@@ -39,6 +39,11 @@
 ##' @param highlight length 4 numeric vector defining the boundaries of the
 ##' (optional) rectangle highlighting an area. Default \code{NA} does not show
 ##' anything. Otherwise use: \code{c(ymin, ymax, xmin, xmax)}
+##' @param highcol color of highlight rectangle (default: 'white')
+##' @param fill_palette palette used for plotting, can be anything passed to
+##' `scale_fill_distiller`''s `palette` argument. 'magma', 'inferno', 'plasma',
+##' 'viridis', and 'cividis' use `scale_fill_viridis_c`. Default is a matlab-like
+##' scale created with colorRamps and `scale_fill_gradientn` ('matlab.like').
 ##' @param x_breaks numerical vector with desired breaks on x-axis. Will
 ##' approximate and round internally.
 ##' @param y_breaks numerical vector with desired breaks on x-axis. Will
@@ -67,7 +72,8 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
                       Timecol = 'Time', Freqcol = 'Hz', Zcol = 'pow',
                       Time_unit = 'ms', Freq_unit = 'Hz', Z_unit = 'dB',
                       highlight = NA, x_breaks = NA, y_breaks = NA,
-                      precise_time = FALSE, x_labs = NA) {
+                      precise_time = FALSE, x_labs = NA, highcol = 'white',
+                      fill_palette = 'matlab.like') {
 
   # usually, there are some imprecisions, so smooth out the y and x axes
   TF[, smooth_Time := seq(min(get(Timecol)), max(get(Timecol)), length.out = .N),
@@ -94,14 +100,33 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
     ), 1)
   }
 
-  # use a matlab-like color palette
-  matlab.jet <- colorRamps::matlab.like(7)
+  # select color palette
+  if (fill_palette == 'matlab.like') {
+    filler <- list(scale_fill_gradientn(colors = colorRamps::matlab.like(7),
+                                        limits = zlim,
+                                        guide = "colourbar",
+                                        oob = scales::squish,
+                                        name = Z_unit))
+  } else if (fill_palette %in% c('magma', 'inferno', 'plasma', 'viridis', 'cividis')) {
+    filler <- list(ggplot2::scale_fill_viridis_c(option = fill_palette,
+                                                 limits = zlim,
+                                                 guide = "colourbar",
+                                                 oob = scales::squish,
+                                                 name = Z_unit))
+  } else {
+    filler <- list(scale_fill_distiller(palette = fill_palette,
+                                        limits = zlim,
+                                        guide = "colourbar",
+                                        oob = scales::squish,
+                                        name = Z_unit))
+  }
+
+
 
   plt <- ggplot(TF) +
     aes(x = smooth_Time, y = smooth_Hz, z = get(Zcol), fill = get(Zcol)) +
     geom_raster(interpolate = do_interpolate) +
-    scale_fill_gradientn(colors = matlab.jet, limits = zlim,
-                         oob = scales::squish, name = Z_unit) +
+    filler +
     ggthemes::theme_tufte() +
     xlab(paste0('Time [', Time_unit, ']')) +
     ylab(Freq_unit)
@@ -156,7 +181,7 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
     #highlight should be c(Freq1, Freq2, Time1, Time2)
     plt <- plt + geom_rect(aes(ymin = h[1], ymax = h[2], xmin = h[3],
                                xmax = h[4]), inherit.aes = FALSE,
-                           colour = 'white', fill = 'transparent',
+                           colour = highcol, fill = 'transparent',
                            lwd = 1)
 
   }
@@ -242,7 +267,7 @@ TF_ggplot <- function(TF, zlim, do_interpolate = T, contours = F,
 ##' @author Wanja Mössing
 ##' @name eeglabCSV2eegUtils
 ##' @seealso eegUtils txt_elec_2_eegUtils
-##' @import data.table eegUtils assertthat
+##' @import data.table assertthat
 ##' @export eeglabCSV2eegUtils
 ##' @importFrom data.table data.table
 eeglabCSV2eegUtils <- function(DT, channel_locfile = NULL) {
@@ -309,7 +334,7 @@ return(EEG)
 ##' @author Wanja Mössing
 ##' @name txt_elec_2_eegUtils
 ##' @seealso eegUtils eeglabCSV2eegUtils
-##' @import data.table eegUtils assertthat
+##' @import data.table assertthat
 ##' @export txt_elec_2_eegUtils
 ##' @importFrom data.table data.table
 txt_elec_2_eegUtils <- function(file_name = NULL) {
@@ -348,4 +373,147 @@ txt_elec_2_eegUtils <- function(file_name = NULL) {
 
 
   return(final_locs)
+}
+
+
+
+##' @title Importing eeg timefreq tables from EEGlab
+##' @description DONT USE THIS! IT IS WORK IN PROGRESS!This is the only way to
+##' import eeglab data to eegUtils that
+##' really worked for me. This assumes that you wrangled your data in eeglab/matlab
+##' into a long table and then exported it as a csv. The csv should have the
+##' following format:
+##'\itemize{
+##' \item one column per Electrode, column names should be electrode names.
+##' \item one column coding participant ID, column name must be 'participant_id' (can also be used for trials)
+##' \item one column coding time, called 'time'
+##' \item one column coding frequency, called 'frequency'
+##' \item one column with a unique value representing sampling rate, called 'srate'
+##' \item one column with a unique value representing the used reference, called 'reference'
+##'}
+##' How to get your data into that format likely depends heavily on the specific
+##'  situation. Thus, there's no matlab-pendant to this function. Nevertheless,
+##' in the examples section below, you can find one possible way of accomplishing
+##'  this in Matlab.
+##'
+##' Note that this function can currently read neither the EEG.events structure
+##' (good luck flattening that to a csv...), nor the EEG.chanlocs structure.
+##' Chanlocs are substituted by reading the channel locations from a .txt file
+##' instead.
+##'
+##'
+##' Note: depends on Matt Craddock's eegUtils package, which is not available on
+##' CRAN. Use \code{remotes::install_github("craddm/eegUtils")} instead.
+##'
+##'
+##' @param DT a \code{data.table} with exactly the columns specified for the csv above
+##' @param channel_locfile a .txt file with spherical coordinates for your channels.
+##' defaults to the scalp-channels of the custom Easycap montage used in our lab
+##' at the WWU Münster, Germany.
+##' @return an \code{eegUtils} object
+##' @examples
+##' # Matlab first, R below
+##' \dontrun{
+##' #%%%%% EXPORTING IN MATLAB %%%%% (usage in R below)
+##' # CHANS = {EEG.chanlocs.labels};
+##' # FLAT = [];
+##' # participant_id = {}; time = []; frequency = [];
+##' # for id = 1:size(EEG.pow, 4)
+##' #      for hz = 1:size(EEG.pow, 1)
+##' #         FOO = squeeze(EEG.pow(hz,:,:,id));
+##' #         participant_id  = [participant_id; repelem(EEG.subject(id), size(FOO,1), 1)];
+##' #         frequency  = [frequency; repelem(EEG.freqs(hz), size(FOO,1), 1)];
+##' #         time = [time; EEG.times'];
+##' #         FLAT = [FLAT; FOO];
+##' #     end
+##' # end
+##' # FLAT = array2table(FLAT);
+##' # FLAT.Properties.VariableNames = CHANS;
+##' # FLAT.participant_id = participant_id;
+##' # FLAT.time = time;
+##' # FLAT.frequency = frequency;
+##' #
+##' # % add column with unique sampling rate value
+##' # FLAT.srate = repelem(EEG.new_srate, height(FLAT), 1);
+##' #
+##' # % add column with unique reference name
+##' # FLAT.reference = repelem('average', height(FLAT), 1);
+##' #
+##' # % write table to csv
+##' # writetable(FLAT, 'foo.csv');
+##' #
+##' #
+##' #-----------------------------
+##' #-----------------------------
+##' #-----------------------------
+##' ###### Importing in R #######
+##' wmR::libraries(data.table, eegUtils, ggplot2, wmR)
+##' EEG <- fread('foo.csv')
+##' EEG <- EEG = eeglabTFRCSV2eegUtils(EEG)
+##' subEEG = select_times(EEG, c(0,100))
+##' ggplot(subEEG  , aes(x = x, y = y, fill = amplitude)) + geom_topo()
+##' }
+##' @author Wanja Mössing
+##' @name eeglabTFRCSV2eegUtils
+##' @seealso eegUtils txt_elec_2_eegUtils
+##' @import data.table assertthat
+##' @export eeglabTFRCSV2eegUtils
+##' @importFrom data.table data.table
+eeglabTFRCSV2eegUtils <- function(DT, channel_locfile = NULL) {
+  stop('This function does not work yet!')
+  # create artifical sample info (needs to be an ongoing counter)
+  DT[, sample := .I]
+
+  # now act as if participants were epochs
+  DT[, epoch := participant_id]
+  assert_that(DT[, is.numeric(participant_id)],
+              msg = 'please use numbers for `participant_id`.')
+  EPOCH = dplyr::tibble(
+    DT[, .(participant_id = '001', recording = NA, epoch_label = NA),
+       by = epoch]
+  )
+
+  # get sampling rate
+  srate <- DT[, unique(srate)]
+  assert_that(length(srate) == 1, msg = 'srate not uniform. please read ?eeglabCSV2eegUtils')
+
+  # get chanlocs
+  chanlocs <- wmR::txt_elec_2_eegUtils(channel_locfile)
+
+  # reduce dataset to eeg channels
+  CHANS = colnames(DT)[!(colnames(DT) %like% 'participant_id|srate|sample|reference')]
+  DATA = as.data.table(DT[,.SD, .SDcols = CHANS])
+  foo <- melt(DATA,id.vars = c('epoch', 'frequency', 'time'),
+              variable.name = 'channel', value.name = 'power')
+  DATA4D <- as.matrix(xtabs(power ~ time + channel + frequency + epoch, foo))
+  # a 4D matrix - time by electrode by frequency by epoch
+
+
+  # construct timings
+  TIMINGS = dplyr::tibble(DT[, .(epoch = as.double(epoch),
+                                 sample = as.double(sample), time) ])
+
+  FREQ = dplyr::tibble(DT[, .(epoch = as.double(epoch),
+                                 sample = as.double(sample), time, frequency) ])
+
+  # construct reference info
+  REF <- list(ref_chans = DT[, unique(reference)],
+              excluded = NULL)
+
+
+  # create the eeg_data object
+  EEG = eegUtils:::eeg_tfr(data = DATA4D,
+                           dimensions = c('time', 'channel', 'frequency', 'epoch'),
+                           events = NULL,
+                           freq_info = FREQ,
+                           srate = srate,
+                           chan_info = chanlocs,
+                           timings = TIMINGS,
+                           epochs = EPOCH,
+                           reference = REF
+  )
+
+  EEG = eegUtils:::validate_eeg_epochs(EEG)
+  return(EEG)
+  # - might have to fake event structure?
 }

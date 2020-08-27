@@ -1,7 +1,7 @@
 Package: wmR
 Type: Package
 Title: Collection of functions I (Wanja Moessing) frequently use
-Version: 1.0.6
+Version: 1.0.7
 Author: Wanja Moessing
 Maintainer: Wanja Moessing <w.a.moessing@gmail.com>
 URL: https://go.wwu.de/buschlab
@@ -10,7 +10,7 @@ Description: Only use this if you know what you're doing!
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1.9000
+RoxygenNote: 7.1.1
 Imports: 
     assertthat (>= 0.2.1),
     CircStats (>= 0.2.6),
@@ -28,7 +28,7 @@ Imports:
     BayesFactor (>= 0.9.12.4.2),
     collapse (>= 1.1.0)
 Remotes: 
-    github::hedderik/pR
-    github::hedderik/hvR
-    github::craddm/eegUtils
+    github::hedderik/pR,
+    github::hedderik/hvR,
+    github::craddm/eegUtils,
     github::jashubbard/edfR
