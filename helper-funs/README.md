@@ -1,9 +1,2 @@
 # helper-funs
-
-Contains subfunctions that (I think) are useful for many programs.
-
-The R functions can either be copied from the `/wmR/R` folder or installed in R as a package via:
-
-```R
-devtools::install_github('wanjam/WM_utilities/helper-funs/wmR')
-```
+My collection of useful helper functions. The main part of this folder are now the Matlab functions, as the R part moved into its own repository at [wanjam/wmR](https://github.com/wanjam/wmR)
