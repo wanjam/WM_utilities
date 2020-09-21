@@ -1,1 +1,0 @@
-start microsoft-edge:https://wunderlist.com/webapp

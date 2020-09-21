@@ -2,13 +2,13 @@
 wanja's utility functions
 
 currently containing:
-* Wrapperfunctions for sending TTL triggers from Matlab on MS Windows
+* Wrapperfunctions for sending TTL triggers from Matlab on MS Windows (__NOW AT wanjam/Easy-TTL-triggers__)
   * this is based on io64 and similar to their functions but finetuned for
     our (and maybe many other EEG/Psychophysics-labs) purposes.
 * Psychtoolbox functions to send TTL triggers via a ViewPixx /EEG
   * contains Pixxput, which converts a decimal number to an RGB value that
     triggers the respective binary code via the parallel port of the Monitor.
-* Wrapper for PTB-Eyelink 1000 functions
+* Wrapper for PTB-Eyelink 1000 functions (__NOW at wanjam/Easy-Eyelink-Interface__)
   * makes life easier by including the most regular routines in just a few
     functions of the kind 'startingroutines'...experiment...'stopping routines'
   * also includes wrappers to get the current gaze position
